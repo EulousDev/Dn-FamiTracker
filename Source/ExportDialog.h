@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -50,12 +50,13 @@ protected:
 	static const int		  DEFAULT_EXPORTERS;
 
 	static LPCTSTR NSF_FILTER[2];
+	static LPCTSTR NSFE_FILTER[2];		// // //
+	static LPCTSTR NSF2_FILTER[2];		// !! !!
 	static LPCTSTR NES_FILTER[2];
 	static LPCTSTR RAW_FILTER[2];
 	static LPCTSTR DPCMS_FILTER[2];
 	static LPCTSTR PRG_FILTER[2];
 	static LPCTSTR ASM_FILTER[2];
-	static LPCTSTR NSFE_FILTER[2];		// // //
 
 #ifdef _DEBUG
 	CString m_strFile;
@@ -64,11 +65,12 @@ protected:
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	void CreateNSF();
+	void CreateNSFe();		// // //
+	void CreateNSF2();		// !! !!
 	void CreateNES();
 	void CreateBIN();
 	void CreatePRG();
 	void CreateASM();
-	void CreateNSFe();		// // //
 	void CreateCustom( CString name );
 
 	DECLARE_MESSAGE_MAP()
@@ -77,4 +79,5 @@ public:
 	afx_msg void OnBnClickedClose();
 	afx_msg void OnBnClickedExport();
 	afx_msg void OnBnClickedPlay();
+	afx_msg void OnCbnSelchangeType();
 };

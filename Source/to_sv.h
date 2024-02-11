@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@
 
 #include <string_view>
 #include <string>
-#include "array_view.h"
 #ifdef _WINDOWS
 #include "stdafx.h" // windows-specific
 #endif
@@ -49,11 +48,6 @@ std::basic_string_view<CharT> to_sv(std::basic_string<CharT, TraitsT, AllocT> &&
 template <typename CharT>
 constexpr std::basic_string_view<CharT> to_sv(std::basic_string_view<CharT> str) noexcept {
 	return str;
-}
-
-template <typename CharT>
-constexpr std::basic_string_view<CharT> to_sv(array_view<CharT> str) noexcept {
-	return std::basic_string_view<CharT>(str.data(), str.size());
 }
 
 #ifdef _WINDOWS

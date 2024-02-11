@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ void CInstHandlerVRC7::UpdateInstrument()
 	pInterface->SetPatch(pVRC7Inst->GetPatch());
 	if (!pVRC7Inst->GetPatch())
 		for (std::size_t i = 0; i < 8; i++)
-			pInterface->SetCustomReg(i, pVRC7Inst->GetCustomReg(i));
+			pInterface->SetCustomReg(i, pVRC7Inst->GetCustomReg(static_cast<int>(i)));
 	m_bUpdate = false;
 }
 

@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="ASAN-Debug|Win32">
+      <Configuration>ASAN-Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ASAN-Debug|x64">
+      <Configuration>ASAN-Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ASAN-Release|Win32">
+      <Configuration>ASAN-Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ASAN-Release|x64">
+      <Configuration>ASAN-Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
@@ -24,34 +40,64 @@
     <Keyword>MFCProj</Keyword>
     <TargetPlatformVersion>8.1</TargetPlatformVersion>
     <ProjectName>Dn-FamiTracker</ProjectName>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.20348.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>Static</UseOfMfc>
     <UseOfAtl>false</UseOfAtl>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <UseOfAtl>false</UseOfAtl>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>Static</UseOfMfc>
     <UseOfAtl>false</UseOfAtl>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <UseOfAtl>false</UseOfAtl>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>Static</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>Static</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -59,42 +105,82 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Platform)\$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|Win32'">$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|x64'">false</LinkIncremental>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Platform)\$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|Win32'">$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|x64'">false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <GenerateManifest>false</GenerateManifest>
+    <LibraryWPath>$(WindowsSDK_MetadataPath);</LibraryWPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|Win32'">
     <GenerateManifest>false</GenerateManifest>
     <LibraryWPath>$(WindowsSDK_MetadataPath);</LibraryWPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <GenerateManifest>false</GenerateManifest>
     <LibraryWPath>$(WindowsSDK_MetadataPath);</LibraryWPath>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|x64'">
+    <GenerateManifest>false</GenerateManifest>
+    <LibraryWPath>$(WindowsSDK_MetadataPath);</LibraryWPath>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <GenerateManifest>false</GenerateManifest>
+    <LibraryWPath>$(WindowsSDK_MetadataPath);</LibraryWPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|Win32'">
     <GenerateManifest>false</GenerateManifest>
     <LibraryWPath>$(WindowsSDK_MetadataPath);</LibraryWPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <GenerateManifest>false</GenerateManifest>
     <LibraryWPath>$(WindowsSDK_MetadataPath);</LibraryWPath>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|x64'">
+    <GenerateManifest>false</GenerateManifest>
+    <LibraryWPath>$(WindowsSDK_MetadataPath);</LibraryWPath>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
@@ -110,10 +196,10 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
       <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MinimalRebuild>false</MinimalRebuild>
       <AdditionalIncludeDirectories>./;Source/</AdditionalIncludeDirectories>
-      <ObjectFileName>obj/$(IntDir)/%(RelativeDir)</ObjectFileName>
+      <ObjectFileName>$(IntDir)/%(RelativeDir)</ObjectFileName>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -125,11 +211,51 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>Dbghelp.lib;winmm.lib;comctl32.lib;dsound.lib;Version.lib;htmlhelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Dbghelp.lib;winmm.lib;comctl32.lib;Avrt.lib;Version.lib;htmlhelp.lib;nafxcwd.lib;Libcmtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <DataExecutionPrevention>true</DataExecutionPrevention>
-      <AdditionalLibraryDirectories>$(LibraryPath)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+    <Manifest />
+    <Manifest />
+    <Manifest />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|Win32'">
+    <Midl>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <MinimalRebuild>false</MinimalRebuild>
+      <AdditionalIncludeDirectories>./;Source/</AdditionalIncludeDirectories>
+      <ObjectFileName>$(IntDir)/%(RelativeDir)</ObjectFileName>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>Dbghelp.lib;winmm.lib;comctl32.lib;Avrt.lib;Version.lib;htmlhelp.lib;MSVCRTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <Manifest />
@@ -153,11 +279,12 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MinimalRebuild>false</MinimalRebuild>
       <AdditionalIncludeDirectories>./;Source/</AdditionalIncludeDirectories>
-      <ObjectFileName>obj/$(IntDir)/%(RelativeDir)</ObjectFileName>
+      <ObjectFileName>$(IntDir)/%(RelativeDir)</ObjectFileName>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <TreatWarningAsError>false</TreatWarningAsError>
+      <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+      <OmitFramePointers>false</OmitFramePointers>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -165,11 +292,52 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>Dbghelp.lib;winmm.lib;comctl32.lib;dsound.lib;Version.lib;htmlhelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Dbghelp.lib;winmm.lib;comctl32.lib;Avrt.lib;Version.lib;htmlhelp.lib;nafxcwd.lib;Libcmtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <DataExecutionPrevention>true</DataExecutionPrevention>
-      <AdditionalLibraryDirectories>$(LibraryPath)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+    <Manifest />
+    <Manifest />
+    <Manifest />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|x64'">
+    <Midl>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <MinimalRebuild>false</MinimalRebuild>
+      <AdditionalIncludeDirectories>./;Source/</AdditionalIncludeDirectories>
+      <ObjectFileName>$(IntDir)/%(RelativeDir)</ObjectFileName>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+      <OmitFramePointers>false</OmitFramePointers>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>Dbghelp.lib;winmm.lib;comctl32.lib;Avrt.lib;Version.lib;htmlhelp.lib;MSVCRTD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <Manifest />
@@ -194,7 +362,7 @@
       </AssemblerOutput>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <ObjectFileName>obj/$(IntDir)/%(RelativeDir)</ObjectFileName>
+      <ObjectFileName>$(IntDir)/%(RelativeDir)</ObjectFileName>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -206,10 +374,53 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>Dbghelp.lib;winmm.lib;comctl32.lib;dsound.lib;Version.lib;htmlhelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Dbghelp.lib;winmm.lib;comctl32.lib;Avrt.lib;Version.lib;htmlhelp.lib;nafxcw.lib;Libcmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Version>
       </Version>
-      <AdditionalLibraryDirectories>$(LibraryPath)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateMapFile>false</GenerateMapFile>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+    </Link>
+    <Manifest />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|Win32'">
+    <Midl>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+    </Midl>
+    <ClCompile>
+      <Optimization>MinSpace</Optimization>
+      <AdditionalIncludeDirectories>./;Source/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <AssemblerOutput>
+      </AssemblerOutput>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ObjectFileName>$(IntDir)/%(RelativeDir)</ObjectFileName>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>Dbghelp.lib;winmm.lib;comctl32.lib;Avrt.lib;Version.lib;htmlhelp.lib;MSVCRT.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <Version>
+      </Version>
+      <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>false</GenerateMapFile>
       <SubSystem>Windows</SubSystem>
@@ -237,11 +448,12 @@
       </AssemblerOutput>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <ObjectFileName>obj/$(IntDir)/%(RelativeDir)</ObjectFileName>
+      <ObjectFileName>$(IntDir)/%(RelativeDir)</ObjectFileName>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <TreatWarningAsError>false</TreatWarningAsError>
+      <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+      <OmitFramePointers>false</OmitFramePointers>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -249,10 +461,54 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>Dbghelp.lib;winmm.lib;comctl32.lib;dsound.lib;Version.lib;htmlhelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Dbghelp.lib;winmm.lib;comctl32.lib;Avrt.lib;Version.lib;htmlhelp.lib;nafxcw.lib;Libcmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Version>
       </Version>
-      <AdditionalLibraryDirectories>$(LibraryPath)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateMapFile>false</GenerateMapFile>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+    </Link>
+    <Manifest />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|x64'">
+    <Midl>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+    </Midl>
+    <ClCompile>
+      <Optimization>MinSpace</Optimization>
+      <AdditionalIncludeDirectories>./;Source/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <AssemblerOutput>
+      </AssemblerOutput>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ObjectFileName>$(IntDir)/%(RelativeDir)</ObjectFileName>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+      <OmitFramePointers>false</OmitFramePointers>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>Dbghelp.lib;winmm.lib;comctl32.lib;Avrt.lib;Version.lib;htmlhelp.lib;MSVCRT.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <Version>
+      </Version>
+      <AdditionalLibraryDirectories>$(LibraryPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>false</GenerateMapFile>
       <SubSystem>Windows</SubSystem>
@@ -263,12 +519,13 @@
     <Manifest />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\APU\digital-sound-antiques\emu2413.c" />
+    <ClCompile Include="Source\ConfigEmulation.cpp" />
+    <ClCompile Include="Source\ConfigGUI.cpp" />
     <ClCompile Include="Source\APU\FDS.cpp" />
-    <ClCompile Include="Source\APU\nsfplay\xgm\devices\Sound\legacy\emu2413.c" />
     <ClCompile Include="Source\APU\nsfplay\xgm\devices\Sound\nes_apu.cpp" />
     <ClCompile Include="Source\APU\nsfplay\xgm\devices\Sound\nes_dmc.cpp" />
     <ClCompile Include="Source\APU\SoundChip2.cpp" />
-    <ClCompile Include="Source\ConfigEmulation.cpp" />
     <ClCompile Include="Source\NoNotifyEdit.cpp" />
     <ClCompile Include="Source\HistoryFileDlg.cpp" />
     <ClCompile Include="Source\APU\2A03.cpp" />
@@ -375,6 +632,7 @@
     <ClCompile Include="Source\CustomExporters.cpp" />
     <ClCompile Include="Source\DocumentWrapper.cpp" />
     <ClCompile Include="Source\TextExporter.cpp" />
+    <ClCompile Include="Source\JsonExporter.cpp" />
     <ClCompile Include="Source\Chunk.cpp" />
     <ClCompile Include="Source\ChunkRenderBinary.cpp" />
     <ClCompile Include="Source\ChunkRenderText.cpp" />
@@ -411,7 +669,7 @@
     <ClCompile Include="Source\ChannelsS5B.cpp" />
     <ClCompile Include="Source\ChannelsVRC6.cpp" />
     <ClCompile Include="Source\ChannelsVRC7.cpp" />
-    <ClCompile Include="Source\DirectSound.cpp" />
+    <ClCompile Include="Source\SoundInterface.cpp" />
     <ClCompile Include="Source\MIDI.cpp" />
     <ClCompile Include="Source\Clipboard.cpp" />
     <ClCompile Include="Source\PatternAction.cpp" />
@@ -432,101 +690,176 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="resource.h">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">echo // Generated Help Map file.  Used by Dn-FamiTracker.HHP. &gt; "hlp\HTMLDefines.h"
-echo. &gt; "hlp\HTMLDefines.h"
-echo // Commands (ID_* and IDM_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h ID_,HID_,0x10000 IDM_,HIDM_,0x10000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"
-echo. &gt;&gt; "hlp\HTMLDefines.h"
-echo // Prompts (IDP_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h IDP_,HIDP_,0x30000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"
-echo. &gt;&gt; "hlp\HTMLDefines.h"
-echo // Resources (IDR_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h IDR_,HIDR_,0x20000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"
-echo. &gt;&gt; "hlp\HTMLDefines.h"
-echo // Dialogs (IDD_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h IDD_,HIDD_,0x20000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"
-echo. &gt;&gt; "hlp\HTMLDefines.h"
-echo // Frame Controls (IDW_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">echo // Generated Help Map file.  Used by Dn-FamiTracker.HHP. &gt; "hlp\HTMLDefines.h"
-echo. &gt; "hlp\HTMLDefines.h"
-echo // Commands (ID_* and IDM_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h ID_,HID_,0x10000 IDM_,HIDM_,0x10000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"
-echo. &gt;&gt; "hlp\HTMLDefines.h"
-echo // Prompts (IDP_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h IDP_,HIDP_,0x30000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"
-echo. &gt;&gt; "hlp\HTMLDefines.h"
-echo // Resources (IDR_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h IDR_,HIDR_,0x20000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"
-echo. &gt;&gt; "hlp\HTMLDefines.h"
-echo // Dialogs (IDD_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h IDD_,HIDD_,0x20000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"
-echo. &gt;&gt; "hlp\HTMLDefines.h"
-echo // Frame Controls (IDW_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">powershell -Command "(Get-Content Dn-help\hlp\changelog_shell.htm).Replace('&lt;!-- INSERT-CHANGELOG-HERE --&gt;', (pandoc docs/CHANGELOG.md -f gfm -t html5)) | Set-Content -encoding UTF8 Dn-help\hlp\changelog.htm"
+echo // Generated Help Map file.  Used by $(SolutionName).hhp. &gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Commands (ID_* and IDM_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h ID_,HID_,0x10000 IDM_,HIDM_,0x10000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Prompts (IDP_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDP_,HIDP_,0x30000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Resources (IDR_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDR_,HIDR_,0x20000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Dialogs (IDD_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDD_,HIDD_,0x20000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Frame Controls (IDW_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|Win32'">powershell -Command "(Get-Content Dn-help\hlp\changelog_shell.htm).Replace('&lt;!-- INSERT-CHANGELOG-HERE --&gt;', (pandoc docs/CHANGELOG.md -f gfm -t html5)) | Set-Content -encoding UTF8 Dn-help\hlp\changelog.htm"
+echo // Generated Help Map file.  Used by $(SolutionName).hhp. &gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Commands (ID_* and IDM_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h ID_,HID_,0x10000 IDM_,HIDM_,0x10000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Prompts (IDP_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDP_,HIDP_,0x30000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Resources (IDR_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDR_,HIDR_,0x20000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Dialogs (IDD_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDD_,HIDD_,0x20000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Frame Controls (IDW_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">powershell -Command "(Get-Content Dn-help\hlp\changelog_shell.htm).Replace('&lt;!-- INSERT-CHANGELOG-HERE --&gt;', (pandoc docs/CHANGELOG.md -f gfm -t html5)) | Set-Content -encoding UTF8 Dn-help\hlp\changelog.htm"
+echo // Generated Help Map file.  Used by $(SolutionName).hhp. &gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Commands (ID_* and IDM_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h ID_,HID_,0x10000 IDM_,HIDM_,0x10000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Prompts (IDP_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDP_,HIDP_,0x30000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Resources (IDR_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDR_,HIDR_,0x20000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Dialogs (IDD_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDD_,HIDD_,0x20000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Frame Controls (IDW_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|x64'">powershell -Command "(Get-Content Dn-help\hlp\changelog_shell.htm).Replace('&lt;!-- INSERT-CHANGELOG-HERE --&gt;', (pandoc docs/CHANGELOG.md -f gfm -t html5)) | Set-Content -encoding UTF8 Dn-help\hlp\changelog.htm"
+echo // Generated Help Map file.  Used by $(SolutionName).hhp. &gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Commands (ID_* and IDM_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h ID_,HID_,0x10000 IDM_,HIDM_,0x10000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Prompts (IDP_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDP_,HIDP_,0x30000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Resources (IDR_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDR_,HIDR_,0x20000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Dialogs (IDD_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDD_,HIDD_,0x20000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Frame Controls (IDW_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Generating map file for help compiler.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|Win32'">Generating map file for help compiler.</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating map file for help compiler.</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">hlp\HTMLDefines.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">hlp\HTMLDefines.h;%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">echo // Generated Help Map file.  Used by Dn-FamiTracker.HHP. &gt; "hlp\HTMLDefines.h"
-echo. &gt; "hlp\HTMLDefines.h"
-echo // Commands (ID_* and IDM_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h ID_,HID_,0x10000 IDM_,HIDM_,0x10000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"
-echo. &gt;&gt; "hlp\HTMLDefines.h"
-echo // Prompts (IDP_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h IDP_,HIDP_,0x30000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"
-echo. &gt;&gt; "hlp\HTMLDefines.h"
-echo // Resources (IDR_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h IDR_,HIDR_,0x20000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"
-echo. &gt;&gt; "hlp\HTMLDefines.h"
-echo // Dialogs (IDD_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h IDD_,HIDD_,0x20000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"
-echo. &gt;&gt; "hlp\HTMLDefines.h"
-echo // Frame Controls (IDW_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">echo // Generated Help Map file.  Used by Dn-FamiTracker.HHP. &gt; "hlp\HTMLDefines.h"
-echo. &gt; "hlp\HTMLDefines.h"
-echo // Commands (ID_* and IDM_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h ID_,HID_,0x10000 IDM_,HIDM_,0x10000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"
-echo. &gt;&gt; "hlp\HTMLDefines.h"
-echo // Prompts (IDP_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h IDP_,HIDP_,0x30000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"
-echo. &gt;&gt; "hlp\HTMLDefines.h"
-echo // Resources (IDR_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h IDR_,HIDR_,0x20000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"
-echo. &gt;&gt; "hlp\HTMLDefines.h"
-echo // Dialogs (IDD_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h IDD_,HIDD_,0x20000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"
-echo. &gt;&gt; "hlp\HTMLDefines.h"
-echo // Frame Controls (IDW_*) &gt;&gt; "hlp\HTMLDefines.h"
-makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.h"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|x64'">Generating map file for help compiler.</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Dn-help\hlp\HTMLDefines.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|Win32'">Dn-help\hlp\HTMLDefines.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Dn-help\hlp\HTMLDefines.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|x64'">Dn-help\hlp\HTMLDefines.h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">powershell -Command "(Get-Content Dn-help\hlp\changelog_shell.htm).Replace('&lt;!-- INSERT-CHANGELOG-HERE --&gt;', (pandoc docs/CHANGELOG.md -f gfm -t html5)) | Set-Content -encoding UTF8 Dn-help\hlp\changelog.htm"
+echo // Generated Help Map file.  Used by $(SolutionName).hhp. &gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Commands (ID_* and IDM_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h ID_,HID_,0x10000 IDM_,HIDM_,0x10000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Prompts (IDP_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDP_,HIDP_,0x30000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Resources (IDR_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDR_,HIDR_,0x20000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Dialogs (IDD_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDD_,HIDD_,0x20000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Frame Controls (IDW_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|Win32'">powershell -Command "(Get-Content Dn-help\hlp\changelog_shell.htm).Replace('&lt;!-- INSERT-CHANGELOG-HERE --&gt;', (pandoc docs/CHANGELOG.md -f gfm -t html5)) | Set-Content -encoding UTF8 Dn-help\hlp\changelog.htm"
+echo // Generated Help Map file.  Used by $(SolutionName).hhp. &gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Commands (ID_* and IDM_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h ID_,HID_,0x10000 IDM_,HIDM_,0x10000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Prompts (IDP_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDP_,HIDP_,0x30000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Resources (IDR_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDR_,HIDR_,0x20000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Dialogs (IDD_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDD_,HIDD_,0x20000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Frame Controls (IDW_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">powershell -Command "(Get-Content Dn-help\hlp\changelog_shell.htm).Replace('&lt;!-- INSERT-CHANGELOG-HERE --&gt;', (pandoc docs/CHANGELOG.md -f gfm -t html5)) | Set-Content -encoding UTF8 Dn-help\hlp\changelog.htm"
+echo // Generated Help Map file.  Used by $(SolutionName).hhp. &gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Commands (ID_* and IDM_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h ID_,HID_,0x10000 IDM_,HIDM_,0x10000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Prompts (IDP_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDP_,HIDP_,0x30000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Resources (IDR_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDR_,HIDR_,0x20000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Dialogs (IDD_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDD_,HIDD_,0x20000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Frame Controls (IDW_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|x64'">powershell -Command "(Get-Content Dn-help\hlp\changelog_shell.htm).Replace('&lt;!-- INSERT-CHANGELOG-HERE --&gt;', (pandoc docs/CHANGELOG.md -f gfm -t html5)) | Set-Content -encoding UTF8 Dn-help\hlp\changelog.htm"
+echo // Generated Help Map file.  Used by $(SolutionName).hhp. &gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Commands (ID_* and IDM_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h ID_,HID_,0x10000 IDM_,HIDM_,0x10000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Prompts (IDP_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDP_,HIDP_,0x30000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Resources (IDR_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDR_,HIDR_,0x20000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Dialogs (IDD_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h IDD_,HIDD_,0x20000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo. &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+echo // Frame Controls (IDW_*) &gt;&gt; "Dn-help\hlp\HTMLDefines.h"
+makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "Dn-help\hlp\HTMLDefines.h"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Generating map file for help compiler.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|Win32'">Generating map file for help compiler.</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating map file for help compiler.</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">hlp\HTMLDefines.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">hlp\HTMLDefines.h;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|x64'">Generating map file for help compiler.</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Dn-help\hlp\HTMLDefines.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|Win32'">Dn-help\hlp\HTMLDefines.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Dn-help\hlp\HTMLDefines.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ASAN-Debug|x64'">Dn-help\hlp\HTMLDefines.h;%(Outputs)</Outputs>
     </CustomBuild>
+    <ClInclude Include="Source\ConfigEmulation.h" />
+    <ClInclude Include="Source\ConfigGUI.h" />
     <ClInclude Include="Source\APU\ChannelLevelState.h" />
+    <ClInclude Include="Source\APU\digital-sound-antiques\emu2413.h" />
     <ClInclude Include="Source\APU\FDS.h" />
     <ClInclude Include="Source\APU\mesen\BaseFdsChannel.h" />
     <ClInclude Include="Source\APU\mesen\FdsAudio.h" />
     <ClInclude Include="Source\APU\mesen\ModChannel.h" />
+    <ClInclude Include="Source\APU\mesen\Namco163Audio.h" />
     <ClInclude Include="Source\APU\nsfplay\xgm\debugout.h" />
     <ClInclude Include="Source\APU\nsfplay\xgm\devices\device.h" />
     <ClInclude Include="Source\APU\nsfplay\xgm\devices\devinfo.h" />
-    <ClInclude Include="Source\APU\nsfplay\xgm\devices\Sound\legacy\2413tone.h" />
-    <ClInclude Include="Source\APU\nsfplay\xgm\devices\Sound\legacy\emu2413.h" />
-    <ClInclude Include="Source\APU\nsfplay\xgm\devices\Sound\legacy\vrc7tone_nuke.h" />
     <ClInclude Include="Source\APU\nsfplay\xgm\devices\Sound\nes_apu.h" />
     <ClInclude Include="Source\APU\nsfplay\xgm\devices\Sound\nes_dmc.h" />
     <ClInclude Include="Source\APU\nsfplay\xgm\devices\Sound\nsfplay_math.h" />
     <ClInclude Include="Source\APU\nsfplay\xgm\xtypes.h" />
-    <ClInclude Include="Source\APU\old\vrc7tone.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </ClInclude>
     <ClInclude Include="Source\APU\SoundChip2.h" />
-    <ClInclude Include="Source\array_view.h" />
-    <ClInclude Include="Source\ConfigEmulation.h" />
     <ClInclude Include="Source\NoNotifyEdit.h" />
     <ClInclude Include="Source\HistoryFileDlg.h" />
     <ClInclude Include="Source\APU\2A03.h" />
@@ -590,6 +923,7 @@ makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.
     <ClInclude Include="Source\ModuleException.h" />
     <ClInclude Include="Source\OldSequence.h" />
     <ClInclude Include="Source\PatternNote.h" />
+    <ClInclude Include="Source\rigtorp\SPSCQueue.h" />
     <ClInclude Include="Source\SeqInstHandler2A03Pulse.h" />
     <ClInclude Include="Source\SeqInstHandlerS5B.h" />
     <ClInclude Include="Source\SeqInstHandlerSawtooth.h" />
@@ -645,6 +979,7 @@ makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.
     <ClInclude Include="Source\type_safe\types.hpp" />
     <ClInclude Include="Source\type_safe\variant.hpp" />
     <ClInclude Include="Source\type_safe\visitor.hpp" />
+    <ClInclude Include="Source\utils\handle_ptr.h" />
     <ClInclude Include="Source\utils\variadic_minmax.h" />
     <ClInclude Include="Source\utils\ftmath.h" />
     <ClInclude Include="Source\utils\input.h" />
@@ -655,6 +990,7 @@ makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.
     <ClInclude Include="Source\WavegenBuiltin.h" />
     <ClInclude Include="Source\WinSDK\VersionHelpers.h" />
     <ClInclude Include="Source\WinSDK\winapifamily.h" />
+    <ClInclude Include="Source\JsonExporter.h" />
     <ClInclude Include="version.h" />
     <ClInclude Include="Source\ChannelMap.h" />
     <ClInclude Include="Source\Common.h" />
@@ -679,7 +1015,7 @@ makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.
     <ClInclude Include="Source\ChannelsS5B.h" />
     <ClInclude Include="Source\ChannelsVRC6.h" />
     <ClInclude Include="Source\ChannelsVRC7.h" />
-    <ClInclude Include="Source\DirectSound.h" />
+    <ClInclude Include="Source\SoundInterface.h" />
     <ClInclude Include="Source\AboutDlg.h" />
     <ClInclude Include="Source\ChannelsDlg.h" />
     <ClInclude Include="Source\CommentsDlg.h" />
@@ -761,10 +1097,6 @@ makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\nsf driver\n163.s" />
-    <None Include="..\nsf driver\nsf_wrap.s" />
-    <None Include="..\nsf driver\periods.s" />
-    <None Include="..\nsf driver\s5b.s" />
     <None Include="Dn-FamiTracker.reg" />
     <None Include="0CC-readme.txt" />
     <None Include="res\Document.ico" />
@@ -789,29 +1121,25 @@ makehm /h /a afxhh.h IDW_,HIDW_,0x50000 "%(FullPath)" &gt;&gt; "hlp\HTMLDefines.
     <None Include="res\key_white_unpressed.bmp" />
     <None Include="res\MainToolbar-16.bmp" />
     <None Include="res\MainToolbar-256.bmp" />
-    <None Include="..\nsf driver\apu.s" />
-    <None Include="..\nsf driver\driver.s" />
-    <None Include="..\nsf driver\effects.s" />
-    <None Include="..\nsf driver\fds.s" />
-    <None Include="..\nsf driver\init.s" />
-    <None Include="..\nsf driver\instrument.s" />
-    <None Include="..\nsf driver\mmc5.s" />
-    <None Include="..\nsf driver\player.s" />
-    <None Include="..\nsf driver\vrc6.s" />
-    <None Include="..\nsf driver\vrc7.s" />
     <None Include="changelog.txt" />
-    <None Include="gpl.txt" />
     <None Include="Source\resampler\resample.inl" />
     <None Include="specs.txt" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="res\Dn-FamiTracker.manifest">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ASAN-Release|x64'">true</ExcludedFromBuild>
     </Manifest>
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\Application.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Source\libsamplerate\libsamplerate.vcxproj">
+      <Project>{5b4c1aa7-4ae9-4ff2-a7e6-8eee50edc6e2}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

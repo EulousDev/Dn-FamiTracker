@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -496,6 +496,9 @@ protected:
 	unsigned char	m_iDefaultDuty;
 	/*!	\brief The effect command parameter of the Axy volume slide effect. */
 	unsigned char	m_iVolSlide;
+	/*!	\brief The targeted channel volume set by the Nxy targeted volume slide effect.
+		\details Remains at -1 (255) if a non-targeted volume slide is used. */
+	char			m_iVolSlideTarget;
 
 	// Misc
 	/*!	\brief A pointer to the underlying sound channel controller object. */

@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -86,7 +86,7 @@ void CS5BChannel::Output(uint32_t Noise, uint32_t Envelope)
 		Output = 0;
 	if (!m_bNoiseDisable && !Noise)
 		Output = 0;
-	Mix(Output);
+	Mix(static_cast<int32_t>(Output) * -1);
 }
 
 double CS5BChannel::GetFrequency() const		// // //

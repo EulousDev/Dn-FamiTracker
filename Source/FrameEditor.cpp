@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ CFrameEditor::CFrameEditor(CMainFrame *pMainFrm) :
 	m_pView(NULL),
 	mClipboardFormat(0),
 	m_iChannelView(theApp.GetSettings()->ChannelViewCount),		// // !!
-	m_iMaxChannelView(theApp.GetSettings()->General.iMaxChannelView),		// // !!
+	m_iMaxChannelView(theApp.GetSettings()->GUI.iMaxChannelView),		// // !!
 	m_iWinWidth(0),
 	m_iWinHeight(0),
 	m_iHiglightLine(0),
@@ -847,7 +847,7 @@ BOOL CFrameEditor::PreTranslateMessage(MSG* pMsg)
 	}
 
 	if (pMsg->message == WM_KEYDOWN) {
-		OnKeyDown(pMsg->wParam, pMsg->lParam & 0xFFFF, pMsg->lParam & 0xFF0000);
+		OnKeyDown(static_cast<UINT>(pMsg->wParam), pMsg->lParam & 0xFFFF, pMsg->lParam & 0xFF0000);
 		// Remove the beep
 		pMsg->message = WM_NULL;
 	}
@@ -1198,7 +1198,7 @@ void CFrameEditor::OnEditCopy()
 		return;
 	}
 
-	if (HGLOBAL hMem = Clipboard.AllocMem(ClipData->GetAllocSize())) {
+	if (HGLOBAL hMem = Clipboard.AllocMem(static_cast<UINT>(ClipData->GetAllocSize()))) {
 		// Copy to clipboard
 		ClipData->ToMem(hMem);
 		// Set clipboard for internal data, hMem may not be used after this point

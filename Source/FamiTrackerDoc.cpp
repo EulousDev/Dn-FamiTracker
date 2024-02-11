@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -51,8 +51,6 @@
 #include <array>		// // //
 #include <unordered_map>		// // //
 
-#include "json/json.hpp"
-
 #include "FamiTracker.h"
 #include "ChannelState.h"		// // //
 #include "Instrument.h"		// // //
@@ -77,12 +75,6 @@
 #include "APU/APU.h"
 #include "str_conv/str_conv.hpp"
 
-using json = nlohmann::json;
-
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
-
 const char* CFamiTrackerDoc::NEW_INST_NAME = "";
 
 // Make 1 channel default since 8 sounds bad
@@ -92,7 +84,9 @@ const bool	CFamiTrackerDoc::DEFAULT_LINEAR_PITCH = false;
 
 // File I/O constants
 static const char *FILE_HEADER				= "FamiTracker Module";
+static const char *FILE_HEADER_DN			= "Dn-FamiTracker Module";
 static const char *FILE_BLOCK_PARAMS		= "PARAMS";
+static const char *FILE_BLOCK_TUNING		= "TUNING";
 static const char *FILE_BLOCK_INFO			= "INFO";
 static const char *FILE_BLOCK_INSTRUMENTS	= "INSTRUMENTS";
 static const char *FILE_BLOCK_SEQUENCES		= "SEQUENCES";
@@ -117,7 +111,10 @@ const char *FILE_BLOCK_DETUNETABLES			= "DETUNETABLES";
 const char *FILE_BLOCK_GROOVES				= "GROOVES";
 const char *FILE_BLOCK_BOOKMARKS			= "BOOKMARKS";
 const char *FILE_BLOCK_PARAMS_EXTRA			= "PARAMS_EXTRA";
+
+// !! !! Dn-FamiTracker specific
 const char *FILE_BLOCK_JSON = "JSON";
+const char *FILE_BLOCK_PARAMS_EMU = "PARAMS_EMU";
 
 // FTI instruments files
 static const char INST_HEADER[] = "FTI";
@@ -163,6 +160,12 @@ std::pair<EffTable, EffTable> MakeEffectConversion(std::initializer_list<std::pa
 	return std::make_pair(forward, backward);
 }
 
+// .first[] converts to 0CC, .second[] converts to FT 050B
+// 0CC for some reason a slightly different effects type order within the tracker,
+// but converts to FT 050B+ effects type order when saved to a file.
+// my guess is cross compatibility with earlier 0CC versions that didn't
+// respect FT 050B+'s effect type order? we can't do anything to change it, now.
+// https://github.com/Dn-Programming-Core-Management/Dn-FamiTracker/wiki/0CC-vs-FT-effects-type-order
 static const auto EFF_CONVERSION_050 = MakeEffectConversion({
 //	{EF_SUNSOFT_ENV_LO,		EF_SUNSOFT_ENV_TYPE},
 //	{EF_SUNSOFT_ENV_TYPE,	EF_SUNSOFT_ENV_LO},
@@ -178,6 +181,47 @@ static const auto EFF_CONVERSION_050 = MakeEffectConversion({
 });
 
 //
+// JSON-struct conversions
+//
+
+// JSON key names
+const char* APU1_OFFSET = "apu1-offset";
+const char* APU2_OFFSET = "apu2-offset";
+const char* VRC6_OFFSET = "vrc6-offset";
+const char* VRC7_OFFSET = "vrc7-offset";
+const char* FDS_OFFSET = "fds-offset";
+const char* MMC5_OFFSET = "mmc5-offset";
+const char* N163_OFFSET = "n163-offset";
+const char* S5B_OFFSET = "s5b-offset";
+const char* USE_SURVEY_MIX = "use-survey-mix";
+
+void from_json(const json& j, stJSONOptionalData& d) {
+	j.at(APU1_OFFSET).get_to(d.APU1_OFFSET);
+	j.at(APU2_OFFSET).get_to(d.APU2_OFFSET);
+	j.at(VRC6_OFFSET).get_to(d.VRC6_OFFSET);
+	j.at(VRC7_OFFSET).get_to(d.VRC7_OFFSET);
+	j.at(FDS_OFFSET).get_to(d.FDS_OFFSET);
+	j.at(MMC5_OFFSET).get_to(d.MMC5_OFFSET);
+	j.at(N163_OFFSET).get_to(d.N163_OFFSET);
+	j.at(S5B_OFFSET).get_to(d.S5B_OFFSET);
+	j.at(USE_SURVEY_MIX).get_to(d.USE_SURVEY_MIX);
+};
+
+void to_json(json& j, const stJSONOptionalData& d) {
+	j = json{
+		{ APU1_OFFSET, d.APU1_OFFSET },
+		{ APU2_OFFSET, d.APU2_OFFSET },
+		{ VRC6_OFFSET, d.VRC6_OFFSET },
+		{ VRC7_OFFSET, d.VRC7_OFFSET },
+		{ FDS_OFFSET, d.FDS_OFFSET },
+		{ MMC5_OFFSET, d.MMC5_OFFSET },
+		{ N163_OFFSET, d.N163_OFFSET },
+		{ S5B_OFFSET, d.S5B_OFFSET },
+		{ USE_SURVEY_MIX, d.USE_SURVEY_MIX }
+	};
+};
+
+//
 // CFamiTrackerDoc
 //
 
@@ -190,18 +234,24 @@ END_MESSAGE_MAP()
 
 // CFamiTrackerDoc construction/destruction
 
-CFamiTrackerDoc::CFamiTrackerDoc() : 
-	m_bFileLoaded(false), 
-	m_bFileLoadFailed(false), 
-	m_iRegisteredChannels(0), 
+CFamiTrackerDoc::CFamiTrackerDoc() :
+	m_bFileLoaded(false),
+	m_bFileLoadFailed(false),
+	m_iRegisteredChannels(0),
 	m_iNamcoChannels(0),		// // //
 	m_bDisplayComment(false),
 	m_pInstrumentManager(new CInstrumentManager(this)),
-	m_pBookmarkManager(new CBookmarkManager(MAX_TRACKS))
+	m_pBookmarkManager(new CBookmarkManager(MAX_TRACKS)),
+	m_bUseExternalOPLLChip(false),
+	m_bUseSurveyMixing(false),
+	m_iPlaybackRate(0),
+	m_iPlaybackRateType(0)
 {
 	// Initialize document object
 
 	ResetDetuneTables();		// // //
+	ResetOPLLPatches();
+	ResetLevelOffset();
 
 	// Clear pointer arrays
 	memset(m_pTracks, 0, sizeof(CPatternData*) * MAX_TRACKS);
@@ -338,6 +388,10 @@ BOOL CFamiTrackerDoc::OnSaveDocument(LPCTSTR lpszPathName)
 		m_bBackupDone = true;
 	}
 
+	// TODO: Dn-FamiTracker compatibility modes
+
+	// to avoid conflicts with FamiTracker beta 0.5.0 modules, set as Dn-FT module
+	m_bFileDnModule = true;
 	if (!SaveDocument(lpszPathName))
 		return FALSE;
 
@@ -404,7 +458,6 @@ void CFamiTrackerDoc::DeleteContents()
 	m_iExpansionChip = SNDCHIP_NONE;
 	m_iVibratoStyle = VIBRATO_OLD;
 	m_bLinearPitch = DEFAULT_LINEAR_PITCH;
-	SetN163LevelOffset(0);
 
 	m_iChannelsAvailable = CHANNELS_DEFAULT;
 	m_iSpeedSplitPoint	 = DEFAULT_SPEED_SPLIT_POINT;
@@ -414,6 +467,8 @@ void CFamiTrackerDoc::DeleteContents()
 	m_vHighlight = CPatternData::DEFAULT_HIGHLIGHT;		// // //
 
 	ResetDetuneTables();		// // //
+	ResetOPLLPatches();
+	ResetLevelOffset();
 
 	// Used for loading older files
 	m_vTmpSequences.clear();		// // //
@@ -431,6 +486,8 @@ void CFamiTrackerDoc::DeleteContents()
 	SetExceededFlag(FALSE);		// // //
 
 	m_csDocumentLock.Unlock();
+
+	m_bUseSurveyMixing = false;
 
 	CDocument::DeleteContents();
 }
@@ -468,7 +525,6 @@ void CFamiTrackerDoc::CreateEmpty()
 	// Auto-select new style vibrato for new modules
 	m_iVibratoStyle = VIBRATO_NEW;
 	m_bLinearPitch = DEFAULT_LINEAR_PITCH;
-	SetN163LevelOffset(0);
 
 	m_iNamcoChannels = 0;		// // //
 
@@ -617,7 +673,7 @@ void CFamiTrackerDoc::AssertFileData(bool Cond, std::string Msg) const
 
 /*** File format description ***
 
-0000: "FamiTracker Module"					id string
+0000: "(Dn-)FamiTracker Module"				id string
 000x: Version								int, version number
 000x: Start of blocks
 
@@ -651,7 +707,7 @@ BOOL CFamiTrackerDoc::SaveDocument(LPCTSTR lpszPathName) const
 
 	// First write to a temp file (if saving fails, the original is not destroyed)
 	CString updir = "/..";
-	GetTempFileName(lpszPathName + updir, _T("0CC"), 0, TempFile);
+	GetTempFileName(lpszPathName + updir, _T("DNM"), 0, TempFile);
 
 	if (!DocumentFile.Open(TempFile, CFile::modeWrite | CFile::modeCreate, &ex)) {
 		// Could not open file
@@ -659,12 +715,12 @@ BOOL CFamiTrackerDoc::SaveDocument(LPCTSTR lpszPathName) const
 		CString strFormatted;
 		ex.GetErrorMessage(szCause, 255);
 		AfxFormatString1(strFormatted, IDS_SAVE_FILE_ERROR, szCause);
-		AfxMessageBox(strFormatted, MB_OK | MB_ICONERROR);
+		theApp.DisplayMessage(strFormatted, MB_OK | MB_ICONERROR);
 		m_pCurrentDocument = nullptr;		// // //
 		return FALSE;
 	}
 
-	DocumentFile.BeginDocument();
+	DocumentFile.BeginDocument(m_bFileDnModule);
 
 	if (!WriteBlocks(&DocumentFile)) {
 		// The save process failed, delete temp file
@@ -673,7 +729,7 @@ BOOL CFamiTrackerDoc::SaveDocument(LPCTSTR lpszPathName) const
 		// Display error
 		CString	ErrorMsg;
 		ErrorMsg.LoadString(IDS_SAVE_ERROR);
-		AfxMessageBox(ErrorMsg, MB_OK | MB_ICONERROR);
+		theApp.DisplayMessage(ErrorMsg, MB_OK | MB_ICONERROR);
 		m_pCurrentDocument = nullptr;		// // //
 		return FALSE;
 	}
@@ -698,7 +754,7 @@ BOOL CFamiTrackerDoc::SaveDocument(LPCTSTR lpszPathName) const
 		strFormatted += ErrorMsg;
 		
 		AfxFormatString1(strFormatted, IDS_SAVE_FILE_ERROR, lpMsgBuf);
-		AfxMessageBox(strFormatted, MB_OK | MB_ICONERROR);
+		theApp.DisplayMessage(strFormatted, MB_OK | MB_ICONERROR);
 		
 		m_pCurrentDocument = nullptr;
 		return FALSE;
@@ -732,7 +788,7 @@ BOOL CFamiTrackerDoc::SaveDocument(LPCTSTR lpszPathName) const
 		str.Format("%d", err);
 		strFormatted += str;
 
-		AfxMessageBox(strFormatted, MB_OK | MB_ICONERROR);
+		theApp.DisplayMessage(strFormatted, MB_OK | MB_ICONERROR);
 		LocalFree(lpMsgBuf);
 
 		// FIXME: Remove temp file. May or may not be what you want.
@@ -756,18 +812,47 @@ bool CFamiTrackerDoc::WriteBlocks(CDocumentFile *pDocFile) const
 {
 	static const int DEFAULT_BLOCK_VERSION[] = {		// // // TODO: use version info
 #ifdef TRANSPOSE_FDS
-		6, 1, 3, 6, 6, 3, 5, 1, 1,	// internal
+		// internal
+		6,		// Parameters
+		1,		// Song Info
+		0,		// Tuning
+		3,		// Header
+		6,		// Instruments
+		6,		// Sequences
+		3,		// Frames
+		5,		// Patterns
+		1,		// DSamples
+		1,		// Comments
 #else
-		6, 1, 3, 6, 6, 3, 4, 1, 1,
+		6,		// Parameters
+		1,		// Song Info
+		0,		// Tuning
+		3,		// Header
+		6,		// Instruments
+		6,		// Sequences
+		3,		// Frames
+		4,		// Patterns
+		1,		// DSamples
+		1,		// Comments
 #endif
-		6, 1, 1,					// expansion
-		2, 1, 1, 1,					// 0cc-ft
-		1							// json
+		// expansion
+		6,		// SequencesVRC6
+		1,		// SequencesN163
+		1,		// SequencesS5B
+		// 0cc-ft
+		2,		// ParamsExtra
+		1,		// DetuneTables
+		1,		// Grooves
+		1,		// Bookmarks
+		// Dn-ft
+		1,		// JSON; should always be backwards compatible!
+		1		// ParamsEmu
 	};
 
 	static bool (CFamiTrackerDoc::*FTM_WRITE_FUNC[])(CDocumentFile*, const int) const = {		// // //
 		&CFamiTrackerDoc::WriteBlock_Parameters,
 		&CFamiTrackerDoc::WriteBlock_SongInfo,
+		&CFamiTrackerDoc::WriteBlock_Tuning,
 		&CFamiTrackerDoc::WriteBlock_Header,
 		&CFamiTrackerDoc::WriteBlock_Instruments,
 		&CFamiTrackerDoc::WriteBlock_Sequences,
@@ -782,12 +867,14 @@ bool CFamiTrackerDoc::WriteBlocks(CDocumentFile *pDocFile) const
 		&CFamiTrackerDoc::WriteBlock_DetuneTables,		// // //
 		&CFamiTrackerDoc::WriteBlock_Grooves,			// // //
 		&CFamiTrackerDoc::WriteBlock_Bookmarks,			// // //
-		&CFamiTrackerDoc::WriteBlock_JSON
+		&CFamiTrackerDoc::WriteBlock_JSON,				// !! !!
+		&CFamiTrackerDoc::WriteBlock_ParamsEmu,			// !! !!
 	};
 
 	for (size_t i = 0; i < sizeof(FTM_WRITE_FUNC) / sizeof(*FTM_WRITE_FUNC); ++i) {
-		if (!CALL_MEMBER_FN(this, FTM_WRITE_FUNC[i])(pDocFile, DEFAULT_BLOCK_VERSION[i]))
-			return false;
+		if (DEFAULT_BLOCK_VERSION[i] != 0)		// !! !! check if block version is nonzero
+			if (!CALL_MEMBER_FN(this, FTM_WRITE_FUNC[i])(pDocFile, DEFAULT_BLOCK_VERSION[i]))
+				return false;
 	}
 	return true;
 }
@@ -804,28 +891,38 @@ bool CFamiTrackerDoc::WriteBlock_Parameters(CDocumentFile *pDocFile, const int V
 
 	pDocFile->WriteBlockInt(m_iChannelsAvailable);
 	pDocFile->WriteBlockInt(static_cast<int>(m_iMachine));
-	pDocFile->WriteBlockInt(m_iEngineSpeed);
+
+
+	if (Version >= 7) {		// // // 050B
+		pDocFile->WriteBlockInt(m_iPlaybackRateType);
+		pDocFile->WriteBlockInt(m_iPlaybackRate);
+	}
+	else
+		pDocFile->WriteBlockInt(m_iEngineSpeed);
 	
 	if (Version >= 3) {
 		pDocFile->WriteBlockInt(m_iVibratoStyle);
-		// TODO write m_bLinearPitch
+		// m_bLinearPitch is written in WriteBlock_ParamsExtra
+		if (Version >= 7)
+			pDocFile->WriteBlockInt(1);		// Hardware sweep pitch reset
 
-		if (Version >= 4) {
+		if (Version > 3 && Version <= 6) {
 			pDocFile->WriteBlockInt(m_vHighlight.First);
 			pDocFile->WriteBlockInt(m_vHighlight.Second);
+		}
 
-			if (Version >= 5) {
-				if (ExpansionEnabled(SNDCHIP_N163))
-					pDocFile->WriteBlockInt(m_iNamcoChannels);
+		if (Version >= 5) {
+			if (ExpansionEnabled(SNDCHIP_N163))
+				pDocFile->WriteBlockInt(m_iNamcoChannels);
+		}
 
-				if (Version >= 6)
-					pDocFile->WriteBlockInt(m_iSpeedSplitPoint);
+		if (Version >= 6) {
+			pDocFile->WriteBlockInt(m_iSpeedSplitPoint);
+		}
 
-				if (Version >= 8) {		// // // 050B
-					pDocFile->WriteBlockChar(m_iDetuneSemitone);
-					pDocFile->WriteBlockChar(m_iDetuneCent);
-				}
-			}
+		if (Version == 8) {		// // // 050B 2015
+			pDocFile->WriteBlockChar(m_iDetuneSemitone);
+			pDocFile->WriteBlockChar(m_iDetuneCent);
 		}
 	}
 
@@ -840,6 +937,17 @@ bool CFamiTrackerDoc::WriteBlock_SongInfo(CDocumentFile *pDocFile, const int Ver
 	pDocFile->WriteBlock(m_strName, 32);
 	pDocFile->WriteBlock(m_strArtist, 32);
 	pDocFile->WriteBlock(m_strCopyright, 32);
+
+	return pDocFile->FlushBlock();
+}
+
+bool CFamiTrackerDoc::WriteBlock_Tuning(CDocumentFile* pDocFile, const int Version) const
+{
+	// Song info
+	pDocFile->CreateBlock(FILE_BLOCK_TUNING, Version);
+
+	pDocFile->WriteBlockChar(m_iDetuneSemitone);
+	pDocFile->WriteBlockChar(m_iDetuneCent);
 
 	return pDocFile->FlushBlock();
 }
@@ -922,7 +1030,7 @@ bool CFamiTrackerDoc::WriteBlock_Instruments(CDocumentFile *pDocFile, const int 
 			// Store the name
 			pInst->GetName(Name);
 			pDocFile->WriteBlockInt((int)strlen(Name));
-			pDocFile->WriteBlock(Name, (int)strlen(Name));			
+			pDocFile->WriteBlock(Name, (int)strlen(Name));
 		}
 	}
 
@@ -1236,6 +1344,7 @@ bool CFamiTrackerDoc::WriteBlock_Patterns(CDocumentFile *pDocFile, const int Ver
 							int EffColumns = (m_pTracks[t]->GetEffectColumnCount(i) + 1);
 
 							for (int n = 0; n < EffColumns; n++) {
+								// write 0CC effect type order as FamiTracker 0.5.0 beta+ effect type order
 								pDocFile->WriteBlockChar(EFF_CONVERSION_050.second[Note->EffNumber[n]]);		// // // 050B
 								pDocFile->WriteBlockChar(Note->EffParam[n]);
 							}
@@ -1264,8 +1373,8 @@ bool CFamiTrackerDoc::WriteBlock_DSamples(CDocumentFile *pDocFile, const int Ver
 			// Write sample
 			pDocFile->WriteBlockChar(i);
 			std::size_t Length = strlen(pSamp->GetName());
-			pDocFile->WriteBlockInt(Length);
-			pDocFile->WriteBlock(pSamp->GetName(), Length);
+			pDocFile->WriteBlockInt(static_cast<int>(Length));
+			pDocFile->WriteBlock(pSamp->GetName(), (unsigned int)Length);
 			pDocFile->WriteBlockInt(pSamp->GetSize());
 			pDocFile->WriteBlock(pSamp->GetData(), pSamp->GetSize());
 		}
@@ -1310,7 +1419,7 @@ BOOL CFamiTrackerDoc::OpenDocument(LPCTSTR lpszPathName)
 		ex.GetErrorMessage(szCause, sizeof(szCause));
 		strFormatted = _T("Could not open file.\n\n");
 		strFormatted += szCause;
-		AfxMessageBox(strFormatted);
+		theApp.DisplayMessage(strFormatted);
 		//OnNewDocument();
 		return FALSE;
 	}
@@ -1328,6 +1437,7 @@ BOOL CFamiTrackerDoc::OpenDocument(LPCTSTR lpszPathName)
 		OpenFile.ValidateFile();
 
 		m_iFileVersion = OpenFile.GetFileVersion();
+		m_bFileDnModule = OpenFile.GetModuleType();
 		DeleteContents();		// // //
 
 		if (m_iFileVersion < 0x0200U) {
@@ -1341,7 +1451,8 @@ BOOL CFamiTrackerDoc::OpenDocument(LPCTSTR lpszPathName)
 			// Auto-select old style vibrato for old files
 			m_iVibratoStyle = VIBRATO_OLD;
 			m_bLinearPitch = false;
-			SetN163LevelOffset(0);
+
+			m_iNamcoChannels = 0;		// // //
 		}
 		else {
 			if (!OpenDocumentNew(OpenFile))
@@ -1352,7 +1463,7 @@ BOOL CFamiTrackerDoc::OpenDocument(LPCTSTR lpszPathName)
 		}
 	}
 	catch (CModuleException *e) {
-		AfxMessageBox(e->GetErrorString().c_str(), MB_ICONERROR);
+		theApp.DisplayMessage(e->GetErrorString().c_str(), MB_ICONERROR);
 		m_pCurrentDocument = nullptr;		// // //
 		delete e;
 		return FALSE;
@@ -1389,7 +1500,8 @@ BOOL CFamiTrackerDoc::OpenDocumentOld(CFile *pOpenFile)
 
 	m_iVibratoStyle = VIBRATO_OLD;
 	m_bLinearPitch = false;
-	SetN163LevelOffset(0);
+
+	m_iNamcoChannels = 0;		// // //
 
 	// // // local structs
 	struct {
@@ -1524,6 +1636,7 @@ BOOL CFamiTrackerDoc::OpenDocumentOld(CFile *pOpenFile)
 							if (Note->Vol == 0)
 								Note->Vol = MAX_VOLUME;
 							if (Note->EffNumber[0] < EF_COUNT)		// // //
+								// read FamiTracker 0.5.0 beta+ effect type order as 0CC effect type order
 								Note->EffNumber[0] = EFF_CONVERSION_050.first[Note->EffNumber[0]];
 						}
 					}
@@ -1582,6 +1695,7 @@ BOOL CFamiTrackerDoc::OpenDocumentNew(CDocumentFile &DocumentFile)
 	static std::unordered_map<std::string, void (CFamiTrackerDoc::*)(CDocumentFile*, const int)> FTM_READ_FUNC;
 	FTM_READ_FUNC[FILE_BLOCK_PARAMS]			= &CFamiTrackerDoc::ReadBlock_Parameters;
 	FTM_READ_FUNC[FILE_BLOCK_INFO]				= &CFamiTrackerDoc::ReadBlock_SongInfo;
+	FTM_READ_FUNC[FILE_BLOCK_TUNING]			= &CFamiTrackerDoc::ReadBlock_Tuning;
 	FTM_READ_FUNC[FILE_BLOCK_INSTRUMENTS]		= &CFamiTrackerDoc::ReadBlock_Instruments;
 	FTM_READ_FUNC[FILE_BLOCK_SEQUENCES]			= &CFamiTrackerDoc::ReadBlock_Sequences;
 	FTM_READ_FUNC[FILE_BLOCK_FRAMES]			= &CFamiTrackerDoc::ReadBlock_Frames;
@@ -1597,7 +1711,8 @@ BOOL CFamiTrackerDoc::OpenDocumentNew(CDocumentFile &DocumentFile)
 	FTM_READ_FUNC[FILE_BLOCK_GROOVES]			= &CFamiTrackerDoc::ReadBlock_Grooves;			// // //
 	FTM_READ_FUNC[FILE_BLOCK_BOOKMARKS]			= &CFamiTrackerDoc::ReadBlock_Bookmarks;		// // //
 	FTM_READ_FUNC[FILE_BLOCK_PARAMS_EXTRA]		= &CFamiTrackerDoc::ReadBlock_ParamsExtra;		// // //
-	FTM_READ_FUNC[FILE_BLOCK_JSON]				= &CFamiTrackerDoc::ReadBlock_JSON;		// // //
+	FTM_READ_FUNC[FILE_BLOCK_JSON]				= &CFamiTrackerDoc::ReadBlock_JSON;				// !! !!
+	FTM_READ_FUNC[FILE_BLOCK_PARAMS_EMU]		= &CFamiTrackerDoc::ReadBlock_ParamsEmu;		// !! !!
 	
 	const char *BlockID;
 	bool ErrorFlag = false;
@@ -1628,7 +1743,7 @@ BOOL CFamiTrackerDoc::OpenDocumentNew(CDocumentFile &DocumentFile)
 		// This shouldn't show up in release (debug only)
 #ifdef _DEBUG
 			if (++_msgs_ < 5)
-				AfxMessageBox(_T("Unknown file block!"));
+				theApp.DisplayMessage(_T("Unknown file block!"));
 #endif
 			if (DocumentFile.IsFileIncomplete())
 				ErrorFlag = true;
@@ -1638,7 +1753,7 @@ BOOL CFamiTrackerDoc::OpenDocumentNew(CDocumentFile &DocumentFile)
 	DocumentFile.Close();
 
 	if (ErrorFlag) {
-		AfxMessageBox(IDS_FILE_LOAD_ERROR, MB_ICONERROR);
+		theApp.DisplayMessage(IDS_FILE_LOAD_ERROR, MB_ICONERROR);
 		DeleteContents();
 		return FALSE;
 	}
@@ -1690,19 +1805,21 @@ void CFamiTrackerDoc::ReadBlock_Parameters(CDocumentFile *pDocFile, const int Ve
 		m_iExpansionChip = pDocFile->GetBlockChar();
 
 	m_iChannelsAvailable = AssertRange(pDocFile->GetBlockInt(), 1, MAX_CHANNELS, "Channel count");		// // //
-	AssertRange<MODULE_ERROR_OFFICIAL>(static_cast<int>(m_iChannelsAvailable), 1, MAX_CHANNELS - 1, "Channel count");
 
 	m_iMachine = static_cast<machine_t>(pDocFile->GetBlockInt());
 	AssertFileData(m_iMachine == NTSC || m_iMachine == PAL, "Unknown machine");
 
 	if (Version >= 7) {		// // // 050B
-		switch (pDocFile->GetBlockInt()) {
+		m_iPlaybackRateType = AssertRange(pDocFile->GetBlockInt(), 0, 2, "Playback rate type");
+		// TODO: implement NSF rate
+		m_iPlaybackRate = AssertRange(pDocFile->GetBlockInt(), 0, 0xFFFF, "Playback rate");
+		switch (m_iPlaybackRateType) {
 		case 1:
-			m_iEngineSpeed = static_cast<int>(1000000. / pDocFile->GetBlockInt() + .5);
+			// workaround for now
+			m_iEngineSpeed = static_cast<int>(1000000. / m_iPlaybackRate + .5);
 			break;
 		case 0: case 2:
 		default:
-			pDocFile->GetBlockInt();
 			m_iEngineSpeed = 0;
 		}
 	}
@@ -1714,7 +1831,7 @@ void CFamiTrackerDoc::ReadBlock_Parameters(CDocumentFile *pDocFile, const int Ve
 	else
 		m_iVibratoStyle = VIBRATO_OLD;
 
-	// TODO read m_bLinearPitch
+	// m_bLinearPitch is read in ReadBlock_ParamsExtra()
 	if (Version >= 9) {		// // // 050B
 		bool SweepReset = pDocFile->GetBlockInt() != 0;
 	}
@@ -1762,7 +1879,7 @@ void CFamiTrackerDoc::ReadBlock_Parameters(CDocumentFile *pDocFile, const int Ve
 
 	AssertRange<MODULE_ERROR_STRICT>(m_iExpansionChip, 0, 0x3F, "Expansion chip flag");
 
-	if (Version >= 8) {		// // // 050B
+	if (Version == 8) {		// // // 050B 2015
 		m_iDetuneSemitone = pDocFile->GetBlockChar();
 		m_iDetuneCent = pDocFile->GetBlockChar();
 	}
@@ -1775,6 +1892,14 @@ void CFamiTrackerDoc::ReadBlock_SongInfo(CDocumentFile *pDocFile, const int Vers
 	pDocFile->GetBlock(m_strName, 32);
 	pDocFile->GetBlock(m_strArtist, 32);
 	pDocFile->GetBlock(m_strCopyright, 32);
+}
+
+void CFamiTrackerDoc::ReadBlock_Tuning(CDocumentFile* pDocFile, const int Version)
+{
+	if (Version == 1) {
+		m_iDetuneSemitone = AssertRange(pDocFile->GetBlockChar(), -12, 12, "Global semitone tuning");
+		m_iDetuneCent = AssertRange(pDocFile->GetBlockChar(), -100, 100, "Global cent tuning");
+	}
 }
 
 void CFamiTrackerDoc::ReadBlock_Header(CDocumentFile *pDocFile, const int Version)
@@ -1894,7 +2019,6 @@ void CFamiTrackerDoc::ReadBlock_Instruments(CDocumentFile *pDocFile, const int V
 void CFamiTrackerDoc::ReadBlock_Sequences(CDocumentFile *pDocFile, const int Version)
 {
 	unsigned int Count = AssertRange(pDocFile->GetBlockInt(), 0, MAX_SEQUENCES * SEQ_COUNT, "2A03 sequence count");
-	AssertRange<MODULE_ERROR_OFFICIAL>(Count, 0U, static_cast<unsigned>(MAX_SEQUENCES * SEQ_COUNT - 1), "2A03 sequence count");		// // //
 
 	if (Version == 1) {
 		for (unsigned int i = 0; i < Count; ++i) {
@@ -2003,7 +2127,6 @@ void CFamiTrackerDoc::ReadBlock_Sequences(CDocumentFile *pDocFile, const int Ver
 void CFamiTrackerDoc::ReadBlock_SequencesVRC6(CDocumentFile *pDocFile, const int Version)
 {
 	unsigned int Count = AssertRange(pDocFile->GetBlockInt(), 0, MAX_SEQUENCES * SEQ_COUNT, "VRC6 sequence count");
-	AssertRange<MODULE_ERROR_OFFICIAL>(Count, 0U, static_cast<unsigned>(MAX_SEQUENCES), "VRC6 sequence count");		// // //
 
 	CSequenceManager *pManager = GetSequenceManager(INST_VRC6);		// // //
 
@@ -2077,7 +2200,6 @@ void CFamiTrackerDoc::ReadBlock_SequencesVRC6(CDocumentFile *pDocFile, const int
 void CFamiTrackerDoc::ReadBlock_SequencesN163(CDocumentFile *pDocFile, const int Version)
 {
 	unsigned int Count = AssertRange(pDocFile->GetBlockInt(), 0, MAX_SEQUENCES * SEQ_COUNT, "N163 sequence count");
-	AssertRange<MODULE_ERROR_OFFICIAL>(Count, 0U, static_cast<unsigned>(MAX_SEQUENCES * SEQ_COUNT - 1), "N163 sequence count");		// // //
 
 	CSequenceManager *pManager = GetSequenceManager(INST_N163);		// // //
 
@@ -2113,7 +2235,6 @@ void CFamiTrackerDoc::ReadBlock_SequencesN163(CDocumentFile *pDocFile, const int
 void CFamiTrackerDoc::ReadBlock_SequencesS5B(CDocumentFile *pDocFile, const int Version)
 {
 	unsigned int Count = AssertRange(pDocFile->GetBlockInt(), 0, MAX_SEQUENCES * SEQ_COUNT, "5B sequence count");
-	AssertRange<MODULE_ERROR_OFFICIAL>(Count, 0U, static_cast<unsigned>(MAX_SEQUENCES * SEQ_COUNT - 1), "N163 sequence count");		// // //
 
 	CSequenceManager *pManager = GetSequenceManager(INST_S5B);		// // //
 
@@ -2327,9 +2448,11 @@ void CFamiTrackerDoc::ReadBlock_Patterns(CDocumentFile *pDocFile, const int Vers
 					}
 				}
 
-				if (m_iFileVersion < 0x450) {		// // // 050B
+				// TODO: Dn-FamiTracker compatibility modes
+				if (m_iFileVersion < 0x450 || m_bFileDnModule) {		// // // 050B
 					for (auto &x : Note->EffNumber)
 						if (x < EF_COUNT)
+							// read FamiTracker 0.5.0 beta+ effect type order as 0CC effect type order
 							x = EFF_CONVERSION_050.first[x];
 				}
 				/*
@@ -2568,58 +2691,13 @@ bool CFamiTrackerDoc::WriteBlock_Bookmarks(CDocumentFile *pDocFile, const int Ve
 			pDocFile->WriteBlockInt(pMark->m_Highlight.Second);
 			pDocFile->WriteBlockChar(pMark->m_bPersist);
 			//pDocFile->WriteBlockInt(pMark->m_sName.size());
-			//pDocFile->WriteBlock(pMark->m_sName, (int)strlen(Name));	
+			//pDocFile->WriteBlock(pMark->m_sName, (int)strlen(Name));
 			pDocFile->WriteString(pMark->m_sName);
 		}
 	}
 
 	return pDocFile->FlushBlock();
 }
-
-
-const char *N163_OFFSET = "n163-offset";
-
-// http://jsonapi.org/format/ except {data:{ is unnecessary.
-const json DEFAULT = {
-	{ N163_OFFSET, 0 }
-};
-
-void CFamiTrackerDoc::ReadBlock_JSON(CDocumentFile *pDocFile, const int Version) {
-	json out(DEFAULT);
-
-	CT2A fileData(pDocFile->ReadString());
-	json in = json::parse(static_cast<char*>(fileData));
-
-	json unknowns;
-	for (auto it : in.items()) {
-		auto key = it.key();					// std::string is bad? If exists non-string, we can't handle it. So pass verbatim into unknowns.
-		if (DEFAULT.find(key) == DEFAULT.end()) {
-			unknowns[key] = it.value();
-		}
-		out[key] = it.value();
-	}
-
-	if (!unknowns.empty()) {
-		auto err = "Warning: unknown JSON data (will be discarded):\n" + unknowns.dump();
-		AfxMessageBox(conv::to_t(std::move(err)).c_str(), MB_ICONWARNING);
-	}
-
-	SetN163LevelOffset(out[N163_OFFSET]);
-}
-
-bool CFamiTrackerDoc::WriteBlock_JSON(CDocumentFile *pDocFile, const int Version) const {
-	const json j = {
-		{ N163_OFFSET, GetN163LevelOffset() }
-	};
-	if (j == DEFAULT) {
-		return true;
-	}
-
-	pDocFile->CreateBlock(FILE_BLOCK_JSON, Version);
-	pDocFile->WriteString(j.dump());
-	return pDocFile->FlushBlock();
-}
-
 
 // // // Extra parameters
 
@@ -2641,6 +2719,86 @@ bool CFamiTrackerDoc::WriteBlock_ParamsExtra(CDocumentFile *pDocFile, const int 
 		pDocFile->WriteBlockChar(m_iDetuneSemitone);
 		pDocFile->WriteBlockChar(m_iDetuneCent);
 	}
+	return pDocFile->FlushBlock();
+}
+
+// !! !! JSON optional data
+
+void CFamiTrackerDoc::ReadBlock_JSON(CDocumentFile* pDocFile, const int Version)
+{
+	const stJSONOptionalData DnDefaultJSONData;
+	const json DEFAULT = DnDefaultJSONData;
+	json out = DEFAULT;
+
+	CT2A fileData(pDocFile->ReadString());
+	json in = json::parse(static_cast<char*>(fileData));
+
+	json unknowns;
+	for (auto it : in.items()) {
+		// std::string is bad? If exists non-string, we can't handle it. So pass verbatim into unknowns.
+		auto key = it.key();
+		if (DEFAULT.find(key) == DEFAULT.end()) {
+			unknowns[key] = it.value();
+		}
+		out[key] = it.value();
+	}
+
+	if (!unknowns.empty()) {
+		auto err = "Warning: unknown JSON data (will be discarded upon saving!):\n" + unknowns.dump();
+		theApp.DisplayMessage(conv::to_t(std::move(err)).c_str(), MB_ICONWARNING);
+	}
+
+	// If unchanged, stop loading data
+	if (out == DEFAULT) return;
+
+	OptionalJSONToInterface(out);
+}
+
+bool CFamiTrackerDoc::WriteBlock_JSON(CDocumentFile* pDocFile, const int Version) const
+{
+	json j = InterfaceToOptionalJSON();
+
+	if (j.empty())
+		return true;
+
+	pDocFile->CreateBlock(FILE_BLOCK_JSON, Version);
+	pDocFile->WriteString(j.dump(-1, '\0', true));		// FT modules aren't UTF-8 yet, so ensure that text is ASCII
+	return pDocFile->FlushBlock();
+}
+
+// !! !! Emulation parameters
+
+void CFamiTrackerDoc::ReadBlock_ParamsEmu(CDocumentFile* pDocFile, const int Version)
+{
+	m_bUseExternalOPLLChip = (pDocFile->GetBlockInt() != 0);
+
+	if (m_bUseExternalOPLLChip) {
+		for (int i = 0; i < 19; i++) {
+			for (int j = 0; j < 8; j++)
+				m_iOPLLPatchBytes[(8 * i) + j] = static_cast<uint8_t>(pDocFile->GetBlockChar());
+			m_strOPLLPatchNames[i] = std::string(pDocFile->ReadString());
+		}
+	}
+}
+
+bool CFamiTrackerDoc::WriteBlock_ParamsEmu(CDocumentFile* pDocFile, const int Version) const
+{
+	if (!(m_bUseExternalOPLLChip && (m_iExpansionChip & SNDCHIP_VRC7)))
+		return true;
+
+	pDocFile->CreateBlock(FILE_BLOCK_PARAMS_EMU, Version);
+
+	// VRC7 emulator parameters
+	if (m_iExpansionChip & SNDCHIP_VRC7) {
+		pDocFile->WriteBlockInt(m_bUseExternalOPLLChip);
+
+		for (int i = 0; i < 19; i++) {
+			for (int j = 0; j < 8; j++)
+				pDocFile->WriteBlockChar(static_cast<char>(m_iOPLLPatchBytes[(8 * i) + j]));
+			pDocFile->WriteString(m_strOPLLPatchNames[i]);
+		}
+	}
+
 	return pDocFile->FlushBlock();
 }
 
@@ -2682,7 +2840,7 @@ bool CFamiTrackerDoc::ImportInstruments(CFamiTrackerDoc *pImported, int *pInstTa
 	// Check instrument count
 	if (GetInstrumentCount() + pImported->GetInstrumentCount() > MAX_INSTRUMENTS) {
 		// Out of instrument slots
-		AfxMessageBox(IDS_IMPORT_INSTRUMENT_COUNT, MB_ICONERROR);
+		theApp.DisplayMessage(IDS_IMPORT_INSTRUMENT_COUNT, MB_ICONERROR);
 		return false;
 	}
 
@@ -2693,7 +2851,7 @@ bool CFamiTrackerDoc::ImportInstruments(CFamiTrackerDoc *pImported, int *pInstTa
 	// Copy sequences
 	for (size_t i = 0; i < sizeof(chip); i++) for (int t = 0; t < SEQ_COUNT; ++t) {
 		if (GetSequenceCount(inst[i], t) + pImported->GetSequenceCount(inst[i], t) > MAX_SEQUENCES) {		// // //
-			AfxMessageBox(IDS_IMPORT_SEQUENCE_COUNT, MB_ICONERROR);
+			theApp.DisplayMessage(IDS_IMPORT_SEQUENCE_COUNT, MB_ICONERROR);
 			return false;
 		}
 		for (unsigned int s = 0; s < MAX_SEQUENCES; ++s) if (pImported->GetSequenceItemCount(inst[i], s, t) > 0) {
@@ -2730,7 +2888,7 @@ bool CFamiTrackerDoc::ImportInstruments(CFamiTrackerDoc *pImported, int *pInstTa
 
 	if (bOutOfSampleSpace) {
 		// Out of sample space
-		AfxMessageBox(IDS_IMPORT_SAMPLE_SLOTS, MB_ICONEXCLAMATION);
+		theApp.DisplayMessage(IDS_IMPORT_SAMPLE_SLOTS, MB_ICONEXCLAMATION);
 		return false;
 	}
 
@@ -2785,7 +2943,7 @@ bool CFamiTrackerDoc::ImportGrooves(CFamiTrackerDoc *pImported, int *pGrooveMap)
 		if (pImported->GetGroove(i) != NULL) {
 			while (GetGroove(Index) != NULL) Index++;
 			if (Index >= MAX_GROOVE) {
-				AfxMessageBox(IDS_IMPORT_GROOVE_SLOTS, MB_ICONEXCLAMATION);
+				theApp.DisplayMessage(IDS_IMPORT_GROOVE_SLOTS, MB_ICONEXCLAMATION);
 				return false;
 			}
 			pGrooveMap[i] = Index;
@@ -3156,7 +3314,7 @@ void CFamiTrackerDoc::SaveInstrument(unsigned int Index, CString FileName) const
 	ASSERT(pInstrument);
 	
 	if (file.m_hFile == CFile::hFileNull) {
-		AfxMessageBox(IDS_FILE_OPEN_ERROR, MB_ICONERROR);
+		theApp.DisplayMessage(IDS_FILE_OPEN_ERROR, MB_ICONERROR);
 		return;
 	}
 
@@ -3202,7 +3360,7 @@ int CFamiTrackerDoc::LoadInstrument(CString FileName)
 		// Signature
 		const std::size_t HEADER_LEN = strlen(INST_HEADER);
 		char Text[256] = {};
-		file.Read(Text, HEADER_LEN);
+		file.Read(Text, static_cast<UINT>(HEADER_LEN));
 		if (strcmp(Text, INST_HEADER) != 0)
 			throw IDS_INSTRUMENT_FILE_FAIL;
 		
@@ -3234,13 +3392,13 @@ int CFamiTrackerDoc::LoadInstrument(CString FileName)
 	}
 	catch (int ID) {		// // // TODO: put all error messages into string table then add exception ctor
 		m_csDocumentLock.Unlock();
-		AfxMessageBox(ID, MB_ICONERROR);
+		theApp.DisplayMessage(ID, MB_ICONERROR);
 		return INVALID_INSTRUMENT;
 	}
 	catch (CModuleException *e) {
 		m_csDocumentLock.Unlock();
 		m_pInstrumentManager->RemoveInstrument(Slot);
-		AfxMessageBox(e->GetErrorString().c_str(), MB_ICONERROR);
+		theApp.DisplayMessage(e->GetErrorString().c_str(), MB_ICONERROR);
 		delete e;
 		return INVALID_INSTRUMENT;
 	}
@@ -3387,10 +3545,41 @@ void CFamiTrackerDoc::SetEngineSpeed(unsigned int Speed)
 	SetExceededFlag();		// // //
 }
 
-void CFamiTrackerDoc::SetMachine(machine_t Machine)
+void CFamiTrackerDoc::SetPlaybackRate(unsigned int Rate, unsigned int Type)
+{
+	m_iPlaybackRateType = Type;
+	if (m_iPlaybackRate != Rate) {
+		SetModifiedFlag();
+		SetExceededFlag();
+	}
+	m_iPlaybackRate = Rate;
+}
+
+unsigned int CFamiTrackerDoc::GetPlaybackRate() const
+{
+	if (m_iPlaybackRate == 0) {
+		switch (m_iMachine) {
+		case NTSC:
+			return CAPU::NSF_RATE_NTSC;
+			break;
+		case PAL:
+			return CAPU::NSF_RATE_PAL;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return m_iPlaybackRate;
+}
+
+void CFamiTrackerDoc::SetMachine(machine_t Machine, bool Redraw)
 {
 	ASSERT(Machine == PAL || Machine == NTSC);
 	m_iMachine = Machine;
+	if (Redraw) {
+		UpdateAllViews(NULL, UPDATE_PATTERN);
+	}
 	SetModifiedFlag();
 	SetExceededFlag();		// // //
 }
@@ -4014,8 +4203,10 @@ void CFamiTrackerDoc::SetupChannels(unsigned char Chip)
 	// This will select a chip in the sound emulator
 
 	if (Chip != SNDCHIP_NONE) {
-		// Do not allow expansion chips in PAL mode
-		SetMachine(NTSC);
+		// Do not allow expansion chips in PAL mode.
+		// Do not redraw pattern editor since we're in the middle of loading document,
+		// and the program is in an inconsistent state.
+		SetMachine(NTSC, false);
 	}
 
 	// Store the chip
@@ -4314,17 +4505,146 @@ void CFamiTrackerDoc::SetLinearPitch(bool Enable)
 	m_bLinearPitch = Enable;
 }
 
-// N163 Volume Offset
-int CFamiTrackerDoc::GetN163LevelOffset() const {
-	return _N163LevelOffset;
+bool CFamiTrackerDoc::GetSurveyMixCheck() const
+{
+	return m_bUseSurveyMixing;
 }
 
-// DocumentPropertiesChanged calls GetN163LevelOffset and updates synth if modified.
-void CFamiTrackerDoc::SetN163LevelOffset(int offset) {
-	if (_N163LevelOffset != offset) {
+void CFamiTrackerDoc::SetSurveyMixCheck(bool SurveyMix)
+{
+	if (m_bUseSurveyMixing != SurveyMix)
 		ModifyIrreversible();
-		_N163LevelOffset = offset;
+	m_bUseSurveyMixing = SurveyMix;
+}
+
+// Device level offset
+int16_t CFamiTrackerDoc::GetLevelOffset(int device) const
+{
+	return m_iDeviceLevelOffset[device];
+}
+
+// DocumentPropertiesChanged calls GetLevelOffset() and updates synth if modified.
+void CFamiTrackerDoc::SetLevelOffset(int device, int16_t offset)
+{
+	if (m_iDeviceLevelOffset[device] != offset)
+		ModifyIrreversible();
+	m_iDeviceLevelOffset[device] = offset;
+}
+
+void CFamiTrackerDoc::ResetLevelOffset()
+{
+	for (int i = 0; i < 8; i++)
+		m_iDeviceLevelOffset[i] = 0;
+}
+
+uint8_t CFamiTrackerDoc::GetOPLLPatchByte(int index) const
+{
+	return m_iOPLLPatchBytes[index];
+}
+
+void CFamiTrackerDoc::SetOPLLPatchByte(int index, uint8_t data)
+{
+	if (m_iOPLLPatchBytes[index] != data)
+		ModifyIrreversible();
+
+	// patch 0 must always be 0
+	if (index >= 8)
+		m_iOPLLPatchBytes[index] = data;
+}
+
+void CFamiTrackerDoc::ResetOPLLPatches()
+{
+	m_bUseExternalOPLLChip = false;
+
+	int DefaultPatchSetNumber = theApp.GetSettings()->Emulation.iVRC7Patch;
+
+	SetOPLLPatchSet(DefaultPatchSetNumber);
+}
+
+void CFamiTrackerDoc::SetOPLLPatchSet(int patchset)
+{
+	// Set to current default OPLL patchset
+	for (int i = 0; i < 19; i++) {
+		for (int j = 0; j < 8; j++) {
+			m_iOPLLPatchBytes[(8 * i) + j] = CAPU::OPLL_DEFAULT_PATCHES[patchset][(8 * i) + j];
+			if (i == 0)
+				m_iOPLLPatchBytes[(8 * i) + j] = 0;
+		}
+		switch (patchset) {
+		case 7:
+			m_strOPLLPatchNames[i] = CAPU::OPLL_PATCHNAME_YM2413[i];
+			break;
+		case 8:
+			m_strOPLLPatchNames[i] = CAPU::OPLL_PATCHNAME_YMF281B[i];
+			break;
+		default:
+			m_strOPLLPatchNames[i] = CAPU::OPLL_PATCHNAME_VRC7[i];
+			break;
+		}
 	}
+}
+
+std::string CFamiTrackerDoc::GetOPLLPatchName(int index) const
+{
+	return m_strOPLLPatchNames[index];
+}
+
+void CFamiTrackerDoc::SetOPLLPatchName(int index, std::string PatchName)
+{
+	if (m_strOPLLPatchNames[index] != PatchName)
+		ModifyIrreversible();
+
+	// patch 0 must always be "(custom instrument)"
+	if (index != 0)
+		m_strOPLLPatchNames[index] = PatchName;
+}
+
+bool CFamiTrackerDoc::GetExternalOPLLChipCheck() const
+{
+	return m_bUseExternalOPLLChip;
+}
+
+void CFamiTrackerDoc::SetExternalOPLLChipCheck(bool UseExternalOPLLChip)
+{
+	if (m_bUseExternalOPLLChip != UseExternalOPLLChip)
+		ModifyIrreversible();
+
+	m_bUseExternalOPLLChip = UseExternalOPLLChip;
+}
+
+// Translates current interface state to JSON object
+json CFamiTrackerDoc::InterfaceToOptionalJSON() const
+{
+	json json;
+	const stJSONOptionalData DEFAULT;
+
+	if (GetLevelOffset(0) != DEFAULT.APU1_OFFSET) json[APU1_OFFSET] = GetLevelOffset(0);
+	if (GetLevelOffset(1) != DEFAULT.APU2_OFFSET) json[APU2_OFFSET] = GetLevelOffset(1);
+	if (GetLevelOffset(2) != DEFAULT.VRC6_OFFSET) json[VRC6_OFFSET] = GetLevelOffset(2);
+	if (GetLevelOffset(3) != DEFAULT.VRC7_OFFSET) json[VRC7_OFFSET] = GetLevelOffset(3);
+	if (GetLevelOffset(4) != DEFAULT.FDS_OFFSET) json[FDS_OFFSET] = GetLevelOffset(4);
+	if (GetLevelOffset(5) != DEFAULT.MMC5_OFFSET) json[MMC5_OFFSET] = GetLevelOffset(5);
+	if (GetLevelOffset(6) != DEFAULT.N163_OFFSET) json[N163_OFFSET] = GetLevelOffset(6);
+	if (GetLevelOffset(7) != DEFAULT.S5B_OFFSET) json[S5B_OFFSET] = GetLevelOffset(7);
+
+	if (GetSurveyMixCheck() != DEFAULT.USE_SURVEY_MIX) json[USE_SURVEY_MIX] = GetSurveyMixCheck();
+
+	return json;
+}
+
+// Translates JSON object to interface state
+void CFamiTrackerDoc::OptionalJSONToInterface(json& j)
+{
+	if (j.find(APU1_OFFSET) != j.end()) SetLevelOffset(0, j.at(APU1_OFFSET));
+	if (j.find(APU2_OFFSET) != j.end()) SetLevelOffset(1, j.at(APU2_OFFSET));
+	if (j.find(VRC6_OFFSET) != j.end()) SetLevelOffset(2, j.at(VRC6_OFFSET));
+	if (j.find(VRC7_OFFSET) != j.end()) SetLevelOffset(3, j.at(VRC7_OFFSET));
+	if (j.find(FDS_OFFSET) != j.end()) SetLevelOffset(4, j.at(FDS_OFFSET));
+	if (j.find(MMC5_OFFSET) != j.end()) SetLevelOffset(5, j.at(MMC5_OFFSET));
+	if (j.find(N163_OFFSET) != j.end()) SetLevelOffset(6, j.at(N163_OFFSET));
+	if (j.find(S5B_OFFSET) != j.end()) SetLevelOffset(7, j.at(S5B_OFFSET));
+
+	if (j.find(USE_SURVEY_MIX) != j.end()) SetSurveyMixCheck(j.at(USE_SURVEY_MIX));
 }
 
 // Attributes
@@ -4334,7 +4654,7 @@ CString CFamiTrackerDoc::GetFileTitle() const
 	// Return file name without extension
 	CString FileName = GetTitle();
 
-	static const LPCSTR EXT[] = {_T(".ftm"), _T(".0cc"), _T(".dnm"), _T(".ftm.bak"), _T(".0cc.bak"), _T(".dnm")};		// // //
+	static const LPCSTR EXT[] = {_T(".ftm"), _T(".0cc"), _T(".dnm"), _T(".ftm.bak"), _T(".0cc.bak"), _T(".dnm.bak")};		// // //
 	// Remove extension
 
 	for (size_t i = 0; i < sizeof(EXT) / sizeof(LPCSTR); ++i) {
@@ -5156,7 +5476,9 @@ void CFamiTrackerDoc::MakeKraid()			// // // Easter Egg
 	SetTrackTitle(0, CPatternData::DEFAULT_TITLE);
 	m_pTracks[0]->ClearEverything();
 	SetEngineSpeed(0);
-	SetMachine(NTSC);
+	// Do not redraw pattern editor since we're in the middle of loading document,
+	// and the program is in an inconsistent state.
+	SetMachine(NTSC, false);
 	SetFrameCount(0, 14);
 	SetPatternLength(0, 24);
 	SetSongSpeed(0, 8);

@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -468,8 +468,8 @@ void CFindResultsBox::OnLvnColumnClickFindResults(NMHDR *pNMHDR, LRESULT *pResul
 int CFindResultsBox::IntCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
 {
 	CListCtrl *pList = reinterpret_cast<CListCtrl*>(lParamSort);
-	long x = strtol(pList->GetItemText(lParam1, m_iLastsortColumn), nullptr, 10);
-	long y = strtol(pList->GetItemText(lParam2, m_iLastsortColumn), nullptr, 10);
+	long x = strtol(pList->GetItemText(static_cast<int>(lParam1), m_iLastsortColumn), nullptr, 10);
+	long y = strtol(pList->GetItemText(static_cast<int>(lParam2), m_iLastsortColumn), nullptr, 10);
 
 	int result = 0;
 	if (x > y)
@@ -483,8 +483,8 @@ int CFindResultsBox::IntCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lPara
 int CFindResultsBox::HexCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
 {
 	CListCtrl *pList = reinterpret_cast<CListCtrl*>(lParamSort);
-	long x = strtol(pList->GetItemText(lParam1, m_iLastsortColumn), nullptr, 16);
-	long y = strtol(pList->GetItemText(lParam2, m_iLastsortColumn), nullptr, 16);
+	long x = strtol(pList->GetItemText(static_cast<int>(lParam1), m_iLastsortColumn), nullptr, 16);
+	long y = strtol(pList->GetItemText(static_cast<int>(lParam2), m_iLastsortColumn), nullptr, 16);
 
 	int result = 0;
 	if (x > y)
@@ -498,8 +498,8 @@ int CFindResultsBox::HexCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lPara
 int CFindResultsBox::StringCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
 {
 	CListCtrl *pList = reinterpret_cast<CListCtrl*>(lParamSort);
-	CString x = pList->GetItemText(lParam1, m_iLastsortColumn);
-	CString y = pList->GetItemText(lParam2, m_iLastsortColumn);
+	CString x = pList->GetItemText(static_cast<int>(lParam1), m_iLastsortColumn);
+	CString y = pList->GetItemText(static_cast<int>(lParam2), m_iLastsortColumn);
 
 	int result = x.Compare(y);
 
@@ -509,8 +509,8 @@ int CFindResultsBox::StringCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lP
 int CFindResultsBox::ChannelCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
 {
 	CListCtrl *pList = reinterpret_cast<CListCtrl*>(lParamSort);
-	CString x = pList->GetItemText(lParam1, m_iLastsortColumn);
-	CString y = pList->GetItemText(lParam2, m_iLastsortColumn);
+	CString x = pList->GetItemText(static_cast<int>(lParam1), m_iLastsortColumn);
+	CString y = pList->GetItemText(static_cast<int>(lParam2), m_iLastsortColumn);
 
 	const auto ToIndex = [] (const CString &x) {
 		static const CString HEADER_STR[] = {
@@ -545,8 +545,8 @@ int CFindResultsBox::ChannelCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM l
 int CFindResultsBox::NoteCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
 {
 	CListCtrl *pList = reinterpret_cast<CListCtrl*>(lParamSort);
-	CString x = pList->GetItemText(lParam1, m_iLastsortColumn);
-	CString y = pList->GetItemText(lParam2, m_iLastsortColumn);
+	CString x = pList->GetItemText(static_cast<int>(lParam1), m_iLastsortColumn);
+	CString y = pList->GetItemText(static_cast<int>(lParam2), m_iLastsortColumn);
 
 	const auto ToIndex = [] (const CString &x) {
 		if (x.Left(1) == _T("^"))

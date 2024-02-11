@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ const int ECHO_BUFFER_LENGTH = 3;
 
 // Number of available channels (max) TODO: should not be used anymore!
 // instead, check the channelsavailable variable and allocate dynamically
-const int MAX_CHANNELS	 = 5 + 3 + 2 + 6 + 1 + 8 + 3;
+const int MAX_CHANNELS	 = 5 + 3 + 2 + 8 + 1 + 6 + 3;
 
 const int CHANNELS_DEFAULT = 5;
 const int CHANNELS_VRC6	   = 3;
@@ -161,6 +161,7 @@ enum effect_t : unsigned char {
 	EF_FDS_MOD_BIAS,    	// // // FDS auto-FM bias
 	EF_PHASE_RESET,  // Reset waveform phase without retriggering note (VRC6-only so far)
 	EF_HARMONIC,  // Multiply the note pitch by an integer
+	EF_TARGET_VOLUME_SLIDE,	// // !! Target volume slide
 
 	EF_COUNT
 };
@@ -224,6 +225,7 @@ const char EFF_CHAR[] = {
 	'Z',   	// EF_FDS_MOD_BIAS,
 	'=',	// EF_PHASE_RESET
 	'K',	// EF_HARMONIC
+	'N',	// // !! EF_TARGET_VOLUME_SLIDE
 };
 
 struct Effect {
@@ -268,7 +270,7 @@ inline int MIDI_NOTE(int octave, int note)		// // //
 inline int GET_OCTAVE(int midi_note)
 {
 	int x = midi_note / NOTE_RANGE;
-	if (midi_note < 0 && !(midi_note % NOTE_RANGE)) --x;
+	if (midi_note < 0 && (midi_note % NOTE_RANGE)) --x;
 	return x;
 }
 

@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -41,20 +41,20 @@
 
 // Modify the following defines if you have to target a platform prior to the ones specified below.
 // Refer to MSDN for the latest info on corresponding values for different platforms.
-#ifndef WINVER				// Allow use of features specific to Windows 95 and Windows NT 4 or later.
-#define WINVER 0x0501		// Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
+#ifndef WINVER
+#define WINVER _WIN32_WINNT_VISTA
 #endif
 
-#ifndef _WIN32_WINNT		// Allow use of features specific to Windows NT 4 or later.
-#define _WIN32_WINNT 0x0501		// Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
-#endif						
-
-#ifndef _WIN32_WINDOWS		// Allow use of features specific to Windows 98 or later.
-#define _WIN32_WINDOWS 0x0410 // Change this to the appropriate value to target Windows Me or later.
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT _WIN32_WINNT_VISTA
 #endif
 
-#ifndef _WIN32_IE			// Allow use of features specific to IE 4.0 or later.
-#define _WIN32_IE 0x0600	// Change this to the appropriate value to target IE 5.0 or later.
+#ifndef _WIN32_WINDOWS
+#define _WIN32_WINDOWS _WIN32_WINNT_VISTA
+#endif
+
+#ifndef _WIN32_IE
+#define _WIN32_IE _WIN32_WINNT_VISTA
 #endif
 
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS	// some CString constructors will be explicit
@@ -99,7 +99,6 @@
 #endif
 
 #ifdef _DEBUG
-#define new DEBUG_NEW
 template <typename... T>
 bool _trace(TCHAR *format, T... args)
 {

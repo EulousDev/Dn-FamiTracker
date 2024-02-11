@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -41,11 +41,11 @@ public:
 
 	void Create(int Width, int Height) override;
 	void SetSampleRate(int SampleRate) override;
-	void SetSampleData(short *iSamples, unsigned int iCount) override;
+	bool SetSpectrumData(short const* pSamples, unsigned int iCount) override;
 	void Draw() override;
 
 protected:
-	void Transform(short *pSamples, unsigned int Count);
+	void Transform(short const* pSamples, unsigned int Count);
 
 private:
 	static const COLORREF BG_COLOR = 0;

@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@
 // CAboutDlg dialog used for App About
 
 LPCTSTR LINK_WEB2 = _T("http://hertzdevil.info/programs/");
-LPCTSTR LINK_WEB = _T("http://famitracker.com");						// // !!
+LPCTSTR LINK_WEB = _T("https://web.archive.org/web/20230415052051/http://famitracker.com/");						// // !!
 LPCTSTR LINK_WEB3 = _T("https://github.com/Dn-Programming-Core-Management/Dn-FamiTracker");						// // !!
 LPCTSTR LINK_BUG  = _T("https://github.com/Dn-Programming-Core-Management/Dn-FamiTracker/issues");		// // !!
 
@@ -166,18 +166,19 @@ BOOL CAboutDlg::OnInitDialog()
 		_T("- 0CC-FamiTracker by HertzDevil\r\n")
 		_T("- Additional improvements by nyanpasu64\r\n")
 		_T("- Export plugin support by Gradualore\r\n")
-		_T("- Sunsoft 5B information in manual by Blue Mario\r\n")		// // !!
+		_T("- Sunsoft 5B information in manual by forple\r\n")		// // !!
+		_T("- Additional manual information by Persune\r\n")		// // !!
 		_T("- Toolbar icons are made by ilkke\r\n")
-		_T("- Dn-FT icon design by Compass Man\r\n")		// // !!
+		_T("- Dn-FT icon design by Pale Moon\r\n")		// // !!
 		_T("- DPCM import resampler by Jarhmander\r\n")
 		_T("- DPCM sample bit order reverser mod by Persune\r\n")		// // !!
 		_T("- Module text import/export by rainwarrior"));		// // //
 	SetDlgItemText(IDC_ABOUT_LIB, // // !!
 		_T("- Blip_buffer 0.4.1 is Copyright (C) blargg (LGPL v2.1)\r\n   (modified by nyanpasu64)\r\n")
 		_T("- FFT code is (C) 2017 Project Nayuki (MIT)\r\n")
-		_T("- emu2413 v1.5.2 (C) Mitsutaka Okazaki (MIT)\r\n")
+		_T("- emu2413 v1.5.9 (C) Mitsutaka Okazaki (MIT)\r\n")
 		_T("- 2A03 sound emulator from NSFPlay\r\n")
-		_T("- FDS sound emulator from Mesen (C) Sourmesen (GPL v3)\r\n")
+		_T("- FDS and N163 sound emulator from Mesen\r\n   (C) Sourmesen (GPL v3)\r\n")
 		_T("- JSON for Modern C++ is Copyright (C) Niels Lohmann (MIT)"));
 
 	m_pHead = new CHead();

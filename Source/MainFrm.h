@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -397,6 +397,7 @@ public:
 	afx_msg void OnDeltaposHighlightSpin1(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnDeltaposHighlightSpin2(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnFileExportRows();
+	afx_msg void OnFileExportJson();
 	afx_msg void OnEditCopyAsText();
 	afx_msg void OnEditCopyAsVolumeSequence();
 	afx_msg void OnEditCopyAsPPMCK();

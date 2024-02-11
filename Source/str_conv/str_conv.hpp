@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <iterator>
 #include <string>
 #include <string_view>
 #include "../to_sv.h"
@@ -104,11 +105,11 @@ auto to_wide(T&& str) {
 
 // defined by nyanpasu64:
 
-typedef std::basic_string<TCHAR> _tstring;
+typedef std::basic_string<TCHAR> tstring;
 
 template <typename T>
 auto to_t(T&& str) {
-	return details::to_utf_string<_tstring>(std::forward<T>(str));
+	return details::to_utf_string<tstring>(std::forward<T>(str));
 }
 
 } // namespace conv

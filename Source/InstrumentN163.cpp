@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -98,12 +98,10 @@ bool CInstrumentN163::Load(CDocumentFile *pDocFile)
 
 	m_iWaveSize = CModuleException::AssertRangeFmt(pDocFile->GetBlockInt(), 4, MAX_WAVE_SIZE, "N163 wave size", "%i");
 	m_iWavePos = CModuleException::AssertRangeFmt(pDocFile->GetBlockInt(), 0, MAX_WAVE_SIZE - 1, "N163 wave position", "%i");
-	CModuleException::AssertRangeFmt<MODULE_ERROR_OFFICIAL>(m_iWavePos, 0, 0x7F, "N163 wave position", "%i");
 	if (pDocFile->GetBlockVersion() >= 8) {		// // // 050B
 		bool AutoPosition = pDocFile->GetBlockInt() != 0;
 	}
 	m_iWaveCount = CModuleException::AssertRangeFmt(pDocFile->GetBlockInt(), 1, MAX_WAVE_COUNT, "N163 wave count", "%i");
-	CModuleException::AssertRangeFmt<MODULE_ERROR_OFFICIAL>(m_iWaveCount, 1, 0x10, "N163 wave count", "%i");
 	
 	for (int i = 0; i < m_iWaveCount; ++i) {
 		for (int j = 0; j < m_iWaveSize; ++j) try {

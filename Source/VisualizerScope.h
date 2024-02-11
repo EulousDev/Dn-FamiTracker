@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 #pragma once
 
 #include "VisualizerBase.h"		// // //
+#include <cstdint>
 
 // CVisualizerScope, scope style visualizer
 
@@ -37,15 +38,16 @@ public:
 
 	void Create(int Width, int Height) override;
 	void SetSampleRate(int SampleRate) override;
+	bool SetScopeData(short const* iSamples, unsigned int iCount) override;
 	void Draw() override;
 	void Display(CDC *pDC, bool bPaintMsg) override;
+	size_t NeededSamples() const;
 
 private:
 	void RenderBuffer();
 	void ClearBackground();
 
 private:
-	int	 m_iWindowBufPtr;
 	short *m_pWindowBuf;
 	bool m_bBlur;
 

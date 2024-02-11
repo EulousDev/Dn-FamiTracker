@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -189,7 +189,7 @@ bool CTrackerChannel::IsEffectCompatible(effect_t EffNumber, int EffParam) const
 				(EffParam <= 0x1F || (EffParam >= 0xE0 && EffParam <= 0xE3));
 		case EF_PORTAMENTO: case EF_ARPEGGIO: case EF_VIBRATO: case EF_TREMOLO:
 		case EF_PITCH: case EF_PORTA_UP: case EF_PORTA_DOWN: case EF_SLIDE_UP: case EF_SLIDE_DOWN:
-		case EF_VOLUME_SLIDE: case EF_DELAYED_VOLUME: case EF_TRANSPOSE:
+		case EF_VOLUME_SLIDE: case EF_DELAYED_VOLUME: case EF_TRANSPOSE: case EF_TARGET_VOLUME_SLIDE:
 			return m_iChannelID != CHANID_DPCM;
 		case EF_PORTAOFF:
 			return false;
@@ -240,7 +240,14 @@ bool CTrackerChannel::IsEffectCompatible(effect_t EffNumber, int EffParam) const
 		case EF_VRC7_PORT: case EF_VRC7_WRITE:		// // // 050B
 			return m_iChip == SNDCHIP_VRC7;
 		case EF_PHASE_RESET:
-			return m_iChip == SNDCHIP_VRC6 && EffParam == 0x00;
+			// Triangle and noise can't reset phase during runtime.
+			if (m_iChannelID == CHANID_TRIANGLE) return false;
+			if (m_iChannelID == CHANID_NOISE) return false;
+			if (m_iChannelID == CHANID_MMC5_VOICE) return false;
+			// VRC7 and S5B is not supported yet.
+			if (m_iChip == SNDCHIP_VRC7) return false;
+			if (m_iChip == SNDCHIP_S5B) return false;
+			return EffParam == 0x00;
 		case EF_HARMONIC:
 			// VRC7 is not supported yet.
 			if (m_iChip == SNDCHIP_VRC7) return false;

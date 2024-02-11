@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -89,6 +89,11 @@ bool CChannelHandlerN163::HandleEffect(effect_t EffNum, unsigned char EffParam)
 		}
 		if (auto pHandler = dynamic_cast<CSeqInstHandlerN163*>(m_pInstHandler.get()))
 			pHandler->RequestWaveUpdate();
+		break;
+	case EF_PHASE_RESET:
+		if (EffParam == 0) {
+			resetPhase();
+		}
 		break;
 	default: return FrequencyChannelHandler::HandleEffect(EffNum, EffParam);
 	}
@@ -307,6 +312,11 @@ CString CChannelHandlerN163::GetCustomEffectString() const		// // //
 		str.AppendFormat(_T(" Z%02X"), m_iWavePos >> 1);
 
 	return str;
+}
+
+void CChannelHandlerN163::resetPhase()
+{
+	m_bResetPhase = true;
 }
 
 void CChannelHandlerN163::WriteReg(int Reg, int Value)

@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -53,10 +53,12 @@ public:
 	virtual BOOL OnInitDialog();
 	virtual BOOL OnApply();
 	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
-	//afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
-	//afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg void OnBnClickedN163Multiplexer();
-	afx_msg void OnCbnSelchangeComboFdsEmulator();
-	afx_msg void OnCbnSelchangeComboS5bEmulator();
 	afx_msg void OnCbnSelchangeComboVrc7Patch();
+	afx_msg void OnEnKillfocusEditLowpassFDS();
+	afx_msg void OnEnKillfocusEditLowpassN163();
+	afx_msg void OnEnChangeEditLowpassFDS();
+	afx_msg void OnEnChangeEditLowpassN163();
+	afx_msg void OnDeltaposSpinLowpassFDS(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDeltaposSpinLowpassN163(NMHDR* pNMHDR, LRESULT* pResult);
 };

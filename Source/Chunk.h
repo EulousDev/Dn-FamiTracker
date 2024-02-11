@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -85,7 +85,7 @@ class CChunkDataString : public CChunkData
 {
 public:
 	CChunkDataString(const std::vector<char> &data) : CChunkData(), m_vData(data) {}
-	int GetSize() const { return m_vData.size(); }
+	int GetSize() const { return static_cast<int>(m_vData.size()); }
 	unsigned short GetData() const { return 0; };	// Invalid for this type
 	std::vector<char> m_vData;
 };

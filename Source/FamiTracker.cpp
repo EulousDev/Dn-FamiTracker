@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -47,6 +47,7 @@
 #include "VersionChecker.h"		// // //
 #include "VersionCheckerDlg.h"		// // !!
 #include <iostream>		// // //
+#include <utility>  // std::move
 #include "str_conv/str_conv.hpp"		// // //
 
 // 0CC uses AfxRegSetValue() and AfxGetModuleShortFileName(),
@@ -58,10 +59,6 @@
 const TCHAR FT_SHARED_MUTEX_NAME[]	= _T("FamiTrackerMutex");	// Name of global mutex
 const TCHAR FT_SHARED_MEM_NAME[]	= _T("FamiTrackerWnd");		// Name of global memory area
 const DWORD	SHARED_MEM_SIZE			= 256;
-
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
 
 // CFamiTrackerApp
 
@@ -78,6 +75,7 @@ END_MESSAGE_MAP()
 // CFamiTrackerApp construction
 
 CFamiTrackerApp::CFamiTrackerApp() :
+	m_CoInitialized(false),
 	m_bThemeActive(false),
 	m_pMIDI(NULL),
 	m_pAccel(NULL),
@@ -108,6 +106,7 @@ CFamiTrackerApp	theApp;
 
 BOOL CFamiTrackerApp::InitInstance()
 {
+	EnableMFCPrint();
 	// InitCommonControls() is required on Windows XP if an application
 	// manifest specifies use of ComCtl32.dll version 6 or later to enable
 	// visual styles.  Otherwise, any window creation will fail.
@@ -121,6 +120,15 @@ BOOL CFamiTrackerApp::InitInstance()
 
 	if (!AfxOleInit()) {
 		TRACE("OLE initialization failed\n");
+	}
+
+	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+	if (FAILED(hr)) {
+		TRACE("CFamiTrackerApp: Failed to CoInitializeEx COM!\n");
+	}
+	if (!FAILED(hr)) {
+		// Call CoUninitialize() on shutdown.
+		m_CoInitialized = true;
 	}
 
 	// Standard initialization
@@ -146,12 +154,16 @@ BOOL CFamiTrackerApp::InitInstance()
 
 	//who: added by Derek Andrews <derek.george.andrews@gmail.com>
 	//why: Load all custom exporter plugins on startup.
-	
+
 	TCHAR pathToPlugins[MAX_PATH];
 	GetModuleFileName(NULL, pathToPlugins, MAX_PATH);
 	PathRemoveFileSpec(pathToPlugins);
 	PathAppend(pathToPlugins, _T("\\Plugins"));
-	m_customExporters = new CCustomExporters( pathToPlugins );
+
+	// https://github.com/eatscrayon/Dn-FamiTracker-dll-hijack
+	// custom exporters are disabled until a better method is found.
+	// this is a huge security risk!
+	//m_customExporters = new CCustomExporters( pathToPlugins );
 
 	// Load custom accelerator
 	m_pAccel = new CAccelerator();
@@ -162,20 +174,10 @@ BOOL CFamiTrackerApp::InitInstance()
 	m_pMIDI = new CMIDI();
 
 	// Create sound generator
-	m_pSoundGenerator = new CSoundGen();
+	m_pSoundGenerator = std::make_shared<CSoundGen>();
 
 	// Create channel map
 	m_pChannelMap = new CChannelMap();
-
-	// Start sound generator thread, initially suspended
-	if (!m_pSoundGenerator->CreateThread(CREATE_SUSPENDED)) {
-		// If failed, restore and save default settings
-		m_pSettings->DefaultSettings();
-		m_pSettings->SaveSettings();
-		// Show message and quit
-		AfxMessageBox(IDS_START_ERROR, MB_ICONERROR);
-		return FALSE;
-	}
 
 	// Check if the application is themed
 	CheckAppThemed();
@@ -183,14 +185,14 @@ BOOL CFamiTrackerApp::InitInstance()
 	// Register the application's document templates.  Document templates
 	//  serve as the connection between documents, frame windows and views
 	CDocTemplate0CC* pDocTemplate = new CDocTemplate0CC(		// // //
-		IDR_MAINFRAME, 
-		RUNTIME_CLASS(CFamiTrackerDoc), 
-		RUNTIME_CLASS(CMainFrame), 
+		IDR_MAINFRAME,
+		RUNTIME_CLASS(CFamiTrackerDoc),
+		RUNTIME_CLASS(CMainFrame),
 		RUNTIME_CLASS(CFamiTrackerView));
 
 	if (!pDocTemplate)
 		return FALSE;
-	
+
 	if (m_pDocManager == NULL)		// // //
 		m_pDocManager = new CDocManager0CC { };
 	m_pDocManager->AddDocTemplate(pDocTemplate);
@@ -224,10 +226,11 @@ BOOL CFamiTrackerApp::InitInstance()
 	if (cmdInfo.m_bExport) {
 		CCommandLineExport exporter;
 		exporter.CommandLineExport(cmdInfo.m_strFileName, cmdInfo.m_strExportFile, cmdInfo.m_strExportLogFile, cmdInfo.m_strExportDPCMFile);
-		ExitProcess(0);
+
+		return FALSE;
 	}
-	if (cmdInfo.m_bHelp) {		// // !!
-		ExitProcess(0);
+	if (cmdInfo.m_bHelp) {		// !! !!
+		return FALSE;
 	}
 
 	// Dispatch commands specified on the command line.  Will return FALSE if
@@ -252,9 +255,9 @@ BOOL CFamiTrackerApp::InitInstance()
 	//  In an SDI app, this should occur after ProcessShellCommand
 	// Enable drag/drop open
 	m_pMainWnd->DragAcceptFiles();
-	
-	// Initialize the sound interface, also resumes the thread
-	if (!m_pSoundGenerator->InitializeSound(m_pMainWnd->m_hWnd)) {
+
+	// Initialize the sound interface, also starts the thread
+	if (!m_pSoundGenerator->BeginThread(m_pSoundGenerator)) {
 		// If failed, restore and save default settings
 		m_pSettings->DefaultSettings();
 		m_pSettings->SaveSettings();
@@ -262,10 +265,10 @@ BOOL CFamiTrackerApp::InitInstance()
 		AfxMessageBox(IDS_START_ERROR, MB_ICONERROR);
 		return FALSE;
 	}
-	
+
 	// Initialize midi unit
 	m_pMIDI->Init();
-	
+
 	if (cmdInfo.m_bPlay)
 		theApp.StartPlayer(MODE_PLAY);
 
@@ -336,6 +339,10 @@ int CFamiTrackerApp::ExitInstance()
 
 	m_pVersionChecker.reset();		// // //
 
+	if (m_CoInitialized) {
+		CoUninitialize();
+	}
+
 	TRACE("App: End ExitInstance\n");
 
 	return CWinApp::ExitInstance();
@@ -358,7 +365,7 @@ BOOL CFamiTrackerApp::PreTranslateMessage(MSG* pMsg)
 void CFamiTrackerApp::CheckAppThemed()
 {
 	HMODULE hinstDll = ::LoadLibrary(_T("UxTheme.dll"));
-	
+
 	if (hinstDll) {
 		typedef BOOL (*ISAPPTHEMEDPROC)();
 		ISAPPTHEMEDPROC pIsAppThemed;
@@ -372,7 +379,7 @@ void CFamiTrackerApp::CheckAppThemed()
 }
 
 bool CFamiTrackerApp::IsThemeActive() const
-{ 
+{
 	return m_bThemeActive;
 }
 
@@ -401,7 +408,7 @@ bool GetFileVersion(LPCTSTR Filename, WORD &Major, WORD &Minor, WORD &Revision, 
 			else
 				Success = false;
 		}
-		else 
+		else
 			Success = false;
 
 		SAFE_RELEASE_ARRAY(pData);
@@ -452,11 +459,11 @@ void CFamiTrackerApp::OnRecentFilesClear()		// // //
 
 void CFamiTrackerApp::OnUpdateRecentFiles(CCmdUI *pCmdUI)		// // //
 {
-	// https://www.codeguru.com/cpp/controls/menu/miscellaneous/article.php/c167
+	// https://web.archive.org/web/20190906190854/https://www.codeguru.com/cpp/controls/menu/miscellaneous/article.php/c167/MRU-list-in-a-submenu-the-MFC-bug-and-how-to-correct-it.htm
 	// updating a submenu?
 	if (pCmdUI->m_pSubMenu != NULL) return;
 
-	m_pRecentFileList->UpdateMenu(pCmdUI);
+	CWinApp::OnUpdateRecentFileMenu(pCmdUI);
 }
 
 void CFamiTrackerApp::ShutDownSynth()
@@ -467,38 +474,40 @@ void CFamiTrackerApp::ShutDownSynth()
 		return;
 	}
 
-	// Save a handle to the thread since the object will delete itself
-	HANDLE hThread = m_pSoundGenerator->m_hThread;
+	auto stdThread = std::move(m_pSoundGenerator->m_audioThread);
 
-	if (hThread == NULL) {
+	if (!stdThread.joinable()) {
 		// Object was found but thread not created
-		delete m_pSoundGenerator;
-		m_pSoundGenerator = NULL;
+		m_pSoundGenerator.reset();
 		TRACE("App: Sound generator object was found but no thread created\n");
 		return;
 	}
 
 	TRACE("App: Waiting for sound player thread to close\n");
 
-	// Resume if thread was suspended
-	if (m_pSoundGenerator->ResumeThread() == 0) {
-		// Thread was not suspended, send quit message
-		// Note that this object may be deleted now!
-		m_pSoundGenerator->PostThreadMessage(WM_QUIT, 0, 0);
-	}
-	// If thread was suspended then it will auto-terminate, because sound hasn't been initialized
+	// Send quit message.
+	m_pSoundGenerator->PostGuiMessage(AM_QUIT, 0, 0);
+
+	// If audio thread is waiting on stuck WASAPI, interrupt the wait. On the next loop
+	// iteration, it will see the quit message.
+	m_pSoundGenerator->Interrupt();
 
 	// Wait for thread to exit
-	DWORD dwResult = ::WaitForSingleObject(hThread, CSoundGen::AUDIO_TIMEOUT + 1000);
+	DWORD dwResult = ::WaitForSingleObject(
+		stdThread.native_handle(), CSoundGen::AUDIO_TIMEOUT + 1000
+	);
 
-	if (dwResult != WAIT_OBJECT_0 && m_pSoundGenerator != NULL) {
+	if (dwResult != WAIT_OBJECT_0) {
 		TRACE("App: Closing the sound generator thread failed\n");
 #ifdef _DEBUG
 		AfxMessageBox(_T("Error: Could not close sound generator thread"));
 #endif
+		stdThread.detach();
 		// Unclean exit
 		return;
 	}
+	stdThread.join();
+	m_pSoundGenerator.reset();
 
 	// Object should be auto-deleted
 	ASSERT(m_pSoundGenerator == NULL);
@@ -506,11 +515,8 @@ void CFamiTrackerApp::ShutDownSynth()
 	TRACE("App: Sound generator has closed\n");
 }
 
-void CFamiTrackerApp::RemoveSoundGenerator()
-{
-	// Sound generator object has been deleted, remove reference
-	m_pSoundGenerator = NULL;
-}
+// It is unsafe for the audio thread to overwrite CFamiTrackerApp::m_soundGenerator
+// (racing with accesses by the GUI thread), because ~shared_ptr() performs work.
 
 CCustomExporters* CFamiTrackerApp::GetCustomExporters(void) const
 {
@@ -527,16 +533,17 @@ void CFamiTrackerApp::RegisterSingleInstance()
 
 	if (m_hWndMapFile != NULL) {
 		LPTSTR pBuf = (LPTSTR) MapViewOfFile(m_hWndMapFile, FILE_MAP_ALL_ACCESS, 0, 0, SHARED_MEM_SIZE);
-		if (pBuf != NULL) { 
+		if (pBuf != NULL) {
 			// Create a string of main window handle
-			_itot_s((int)GetMainWnd()->m_hWnd, pBuf, SHARED_MEM_SIZE, 10);
+			uint64_t mainWnd = reinterpret_cast<uint64_t>(GetMainWnd()->m_hWnd);		// HWND is 64 bit on x64 builds
+			_itot_s(static_cast<int>(mainWnd), static_cast<char *>(pBuf), SHARED_MEM_SIZE, 10);
 			UnmapViewOfFile(pBuf);
 		}
 	}
 }
 
 void CFamiTrackerApp::UnregisterSingleInstance()
-{	
+{
 	// Close shared memory area
 	if (m_hWndMapFile) {
 		CloseHandle(m_hWndMapFile);
@@ -553,9 +560,9 @@ void CFamiTrackerApp::CheckNewVersion(bool StartUp)		// // //
 }
 
 bool CFamiTrackerApp::CheckSingleInstance(CFTCommandLineInfo &cmdInfo)
-{	
+{
 	// Returns true if program should close
-	
+
 	if (!GetSettings()->General.bSingleInstance)
 		return false;
 
@@ -567,11 +574,11 @@ bool CFamiTrackerApp::CheckSingleInstance(CFTCommandLineInfo &cmdInfo)
 	if (GetLastError() == ERROR_ALREADY_EXISTS) {
 		// Another instance detected, get window handle
 		HANDLE hMapFile = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, FT_SHARED_MEM_NAME);
-		if (hMapFile != NULL) {	
+		if (hMapFile != NULL) {
 			LPCTSTR pBuf = (LPTSTR) MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, SHARED_MEM_SIZE);
 			if (pBuf != NULL) {
 				// Get window handle
-				HWND hWnd = (HWND)_ttoi(pBuf);
+				HWND hWnd = HWND(std::stoull(pBuf));
 				if (hWnd != NULL) {
 					// Get file name
 					LPTSTR pFilePath = cmdInfo.m_strFileName.GetBuffer();
@@ -594,7 +601,7 @@ bool CFamiTrackerApp::CheckSingleInstance(CFTCommandLineInfo &cmdInfo)
 			CloseHandle(hMapFile);
 		}
 	}
-	
+
 	return false;
 }
 
@@ -633,9 +640,9 @@ int CFamiTrackerApp::GetCPUUsage() const
 	// Calculate CPU usage
 	const HANDLE hThreads[] = {
 		m_hThread,
-		m_pSoundGenerator->m_hThread,
+		m_pSoundGenerator->m_audioThread.native_handle(),
 		GetMainFrame()->GetVisualizerWnd()->GetThreadHandle(),
-	};	
+	};
 
 	static FILETIME KernelLastTime[std::size(hThreads)] = { };
 	static FILETIME UserLastTime[std::size(hThreads)] = { };
@@ -691,6 +698,35 @@ void CFamiTrackerApp::RefreshFrameEditor()
 	CFamiTrackerView::GetView()->RefreshFrameEditor();
 }
 
+void CFamiTrackerApp::EnableMFCPrint()
+{
+	// GUI subsystem apps only receive standard handles for inputs/outputs that are being redirected. If the app was run from the command line the app can attach to the console of its parent and use its handles.
+	HANDLE stdOut = GetStdHandle(STD_OUTPUT_HANDLE),
+		stdErr = GetStdHandle(STD_ERROR_HANDLE);
+
+	if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+		FILE* pcout;
+		errno_t err = 0, err2 = 0;
+
+		if (!stdOut) {
+			err = freopen_s(&pcout, "CONOUT$", "w", stdout);
+
+			std::cout.clear();
+			std::wcout.clear();
+		}
+		if (!stdErr) {
+			err2 = freopen_s(&pcout, "CONOUT$", "w", stderr);
+
+			std::cerr.clear();
+			std::wcerr.clear();
+		}
+
+		puts(APP_NAME_VERSION);
+
+		m_bIsCLI = true;
+	}
+}
+
 BOOL CFamiTrackerApp::OnIdle(LONG lCount)		// // //
 {
 	if (CWinApp::OnIdle(lCount))
@@ -709,7 +745,7 @@ BOOL CFamiTrackerApp::OnIdle(LONG lCount)		// // //
 }
 
 void CFamiTrackerApp::OnVersionCheck()
-{	
+{
 	CVersionCheckerDlg VCDlg;
 	VCDlg.DoModal();
 }
@@ -782,7 +818,7 @@ void CFamiTrackerApp::ResetPlayer()
 
 // File load/save
 
-void CFamiTrackerApp::OnFileOpen() 
+void CFamiTrackerApp::OnFileOpen()
 {
 	CString newName = _T("");		// // //
 
@@ -790,14 +826,33 @@ void CFamiTrackerApp::OnFileOpen()
 		return; // open cancelled
 
 	CFrameWnd *pFrameWnd = (CFrameWnd*)GetMainWnd();
-	
+
 	if (pFrameWnd)
 		pFrameWnd->SetMessageText(IDS_LOADING_FILE);
-	
+
 	AfxGetApp()->OpenDocumentFile(newName);
 
 	if (pFrameWnd)
 		pFrameWnd->SetMessageText(IDS_LOADING_DONE);
+}
+
+void CFamiTrackerApp::DisplayMessage(LPCTSTR lpszText, UINT nType, UINT nIDHelp)
+{
+	if (m_bIsCLI)
+		_putts(lpszText);
+	else
+		AfxMessageBox(lpszText, nType, nIDHelp);
+}
+
+void CFamiTrackerApp::DisplayMessage(UINT nIDPrompt, UINT nType, UINT nIDHelp)
+{
+	if (m_bIsCLI) {
+		CString strFormatted;
+		AfxFormatString1(strFormatted, nIDPrompt, "");
+		_putts(strFormatted);
+	}
+	else
+		AfxMessageBox(nIDPrompt, nType, nIDHelp);
 }
 
 // Used to display a messagebox on the main thread
@@ -875,9 +930,9 @@ CString MakeFloatString(float val, LPCTSTR format)
  *
  */
 
-CFTCommandLineInfo::CFTCommandLineInfo() : CCommandLineInfo(), 
-	m_bLog(false), 
-	m_bExport(false), 
+CFTCommandLineInfo::CFTCommandLineInfo() : CCommandLineInfo(),
+	m_bLog(false),
+	m_bExport(false),
 	m_bPlay(false),
 	m_bHelp(false),		// // !!
 	m_strExportFile(_T("")),
@@ -903,7 +958,7 @@ void CFTCommandLineInfo::ParseParam(const TCHAR* pszParam, BOOL bFlag, BOOL bLas
 			return;
 		}
 		// Disable crash dumps (/nodump)
-		else if (!_tcsicmp(pszParam, _T("nodump"))) { 
+		else if (!_tcsicmp(pszParam, _T("nodump"))) {
 #ifdef ENABLE_CRASH_HANDLER
 			UninstallExceptionHandler();
 #endif
@@ -915,17 +970,6 @@ void CFTCommandLineInfo::ParseParam(const TCHAR* pszParam, BOOL bFlag, BOOL bLas
 			m_bLog = true;
 			return;
 #endif
-		}
-		// Enable console output (TODO)
-		// This is intended for a small helper program that avoids the problem with console on win32 programs,
-		// and should remain undocumented. I'm using it for testing.
-		else if (!_tcsicmp(pszParam, _T("console"))) {
-			FILE *f;
-			AttachConsole(ATTACH_PARENT_PROCESS);
-			errno_t err = freopen_s(&f, "CON", "w", stdout);
-			errno_t err2 = freopen_s(&f, "CON", "w", stderr);
-			fprintf(stderr, "%s\n", APP_NAME_VERSION);		// // //
-			return;
 		}
 		// // !! help (/help)
 		else if (!_tcsicmp(pszParam, _T("help")) || !_tcsicmp(pszParam, _T("h"))) {
@@ -941,12 +985,11 @@ void CFTCommandLineInfo::ParseParam(const TCHAR* pszParam, BOOL bFlag, BOOL bLas
 			helpmessage += "export\t: exports the module to a specified format. the format is determined by the filetype of the output.\n";
 			helpmessage += "\t-export [output file] [optional log file] [DPCM file for BIN export]\n";
 			helpmessage += "\tthe following formats are available:\n";
-			helpmessage += "\t\t.nsf\n\t\t.nes\n\t\t.bin\n\t\t.prg\n\t\t.asm\n\t\t.nsfe\n\t\t.txt\n";
+			helpmessage += "\t\t.nsf\n\t\t.nsfe\n\t\t.nsf2\t\t\t(generates NSF2 formatted file)\n\t\t.nes\n\t\t.bin\n\t\t.bin_aux\t\t(generates auxiliary data)\n\t\t.prg\n\t\t.asm\n\t\t.asm_aux\t\t(generates auxiliary data)\n\t\t.txt\n";
 			helpmessage += "nodump\t: disables the crash dump generation, for cases where these are undesirable\n";
 			helpmessage += "log\t: enables the register logger, available in debug builds only\n";
 			helpmessage += "Press enter to continue . . .";
 			fprintf(stdout, "%s\n", helpmessage.c_str());
-			fclose(cout);
 			return;
 		}
 	}

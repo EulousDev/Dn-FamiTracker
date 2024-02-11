@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,19 +26,6 @@
 
 class CInstrumentEditorVRC7 : public CInstrumentEditPanel
 {
-
-	enum PatchTone {
-		VRC7_NUKE = 0,
-		VRC7_RW = 1,
-		VRC7_FT36 = 2,
-		VRC7_FT35 = 3,
-		VRC7_MO = 4,
-		VRC7_KT2 = 5,
-		VRC7_KT1 = 6,
-		TONE_2413 = 7,
-		TONE_281B = 8,
-	};
-
 	DECLARE_DYNAMIC(CInstrumentEditorVRC7)
 
 public:
@@ -52,6 +39,11 @@ public:
 // Dialog Data
 	enum { IDD = IDD_INSTRUMENT_VRC7 };
 
+private:
+	uint8_t			OPLLPatchBytes[19 * 8];
+	std::string		OPLLPatchNames[19];
+
+	CFamiTrackerDoc *m_pDocument;
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 
@@ -59,19 +51,16 @@ protected:
 	void LoadCustomPatch();
 	void SaveCustomPatch();
 	void LoadInternalPatch(int Num);
-	void WritePatchText(int Patch);
+	void PatchBytesToText(int Patch);
 
 	void SetupSlider(int Slider, int Max);
 	int GetSliderVal(int Slider);
 	void SetSliderVal(int Slider, int Value);
 	void EnableControls(bool bEnable);
 	void SelectPatch(int Patch);
-	void PasteSettings(LPCTSTR pString);
+	void PatchTextToBytes(LPCTSTR pString);
 	void CopyAsPlainText();		// // //
-	uint8_t FetchPatchByte(PatchTone patch_bank_id, int patch, unsigned char patch_byte);
-
-private:
-	PatchTone PatchBank;
+	uint8_t FetchPatchByte(int patch, unsigned char patch_byte);
 
 protected:
 	std::shared_ptr<CInstrumentVRC7> m_pInstrument;

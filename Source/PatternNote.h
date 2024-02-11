@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -43,4 +43,27 @@ public:
 public:
 	static const CString NOTE_NAME[NOTE_RANGE];
 	static const CString NOTE_NAME_FLAT[NOTE_RANGE];
+
+	bool operator==(const stChanNote& other) const {
+		if (Note != other.Note
+			|| Octave != other.Octave
+			|| Vol != other.Vol
+			|| Instrument != other.Instrument)
+		{
+			return false;
+		}
+		for (int i = 0; i < MAX_EFFECT_COLUMNS; ++i)
+		{
+			if (EffNumber[i] != other.EffNumber[i] || EffParam[i] != other.EffParam[i])
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	bool operator!=(const stChanNote& other) const {
+		return !(*this == other);
+	}
 };

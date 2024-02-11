@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -57,6 +57,8 @@ protected:
 	int		CalculatePeriod(bool MultiplyByHarmonic = true) const override;		// // //
 	CString	GetSlideEffectString() const override;		// // //
 	CString	GetCustomEffectString() const override;		// // //
+
+	void	resetPhase();
 
 private:
 	void WriteReg(int Reg, int Value);

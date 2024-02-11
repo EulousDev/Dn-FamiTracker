@@ -232,12 +232,6 @@
     <Filter Include="Source Files\utils">
       <UniqueIdentifier>{5b5628bb-0b1c-41b9-919d-73689e71d621}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Sound Driver Headers\Emulation Headers\Sound Chip Headers\External\old">
-      <UniqueIdentifier>{beb189dc-9d30-47cd-983b-cb0020af33af}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Sound Driver\Emulation\Sound Chips\External\old">
-      <UniqueIdentifier>{758675ec-da50-40ab-b4a3-0d47e196eb29}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Sound Driver\Emulation\Sound Chips\External\nsfplay">
       <UniqueIdentifier>{741b1515-d38b-4f27-bd80-1dcc3d442822}</UniqueIdentifier>
     </Filter>
@@ -504,7 +498,7 @@
     <ClCompile Include="Source\ChannelsVRC7.cpp">
       <Filter>Source Files\Sound Driver\Channels</Filter>
     </ClCompile>
-    <ClCompile Include="Source\DirectSound.cpp">
+    <ClCompile Include="Source\SoundInterface.cpp">
       <Filter>Source Files\Sound Driver\Audio</Filter>
     </ClCompile>
     <ClCompile Include="Source\MIDI.cpp">
@@ -726,9 +720,6 @@
     <ClCompile Include="Source\utils\ftmath.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ConfigEmulation.cpp">
-      <Filter>Source Files\Dialog Boxes\Config</Filter>
-    </ClCompile>
     <ClCompile Include="Source\VersionChecker.cpp">
       <Filter>Source Files\Other</Filter>
     </ClCompile>
@@ -744,11 +735,17 @@
     <ClCompile Include="Source\APU\nsfplay\xgm\devices\Sound\nes_dmc.cpp">
       <Filter>Source Files\Sound Driver\Emulation\Sound Chips\External\nsfplay</Filter>
     </ClCompile>
-    <ClCompile Include="Source\APU\nsfplay\xgm\devices\Sound\legacy\emu2413.c">
+    <ClCompile Include="Source\APU\digital-sound-antiques\emu2413.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\APU\FDS.cpp">
       <Filter>Source Files\Sound Driver\Emulation\Sound Chips</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ConfigGUI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ConfigEmulation.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -836,7 +833,7 @@
     <ClInclude Include="Source\ChannelsVRC7.h">
       <Filter>Header Files\Sound Driver Headers\Channels Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\DirectSound.h">
+    <ClInclude Include="Source\SoundInterface.h">
       <Filter>Header Files\Sound Driver Headers\Audio Headers</Filter>
     </ClInclude>
     <ClInclude Include="Source\AboutDlg.h">
@@ -1325,9 +1322,6 @@
     <ClInclude Include="Source\to_sv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\array_view.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\utils\input.h">
       <Filter>Header Files\utils</Filter>
     </ClInclude>
@@ -1433,17 +1427,14 @@
     <ClInclude Include="Source\utils\ftmath.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ConfigEmulation.h">
-      <Filter>Header Files\Dialog Boxes Headers\Config Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\APU\old\vrc7tone.h">
-      <Filter>Header Files\Sound Driver Headers\Emulation Headers\Sound Chip Headers\External\old</Filter>
-    </ClInclude>
     <ClInclude Include="Source\VersionChecker.h">
       <Filter>Header Files\Other Headers</Filter>
     </ClInclude>
     <ClInclude Include="Source\VersionCheckerDlg.h">
       <Filter>Header Files\Dialog Boxes Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\APU\digital-sound-antiques\emu2413.h">
+      <Filter>Header Files\Sound Driver Headers\Emulation Headers</Filter>
     </ClInclude>
     <ClInclude Include="Source\APU\nsfplay\xgm\devices\device.h">
       <Filter>Header Files</Filter>
@@ -1475,15 +1466,6 @@
     <ClInclude Include="Source\APU\nsfplay\xgm\devices\Sound\nsfplay_math.h">
       <Filter>Header Files\Sound Driver Headers\Emulation Headers\Sound Chip Headers\External\nsfplay</Filter>
     </ClInclude>
-    <ClInclude Include="Source\APU\nsfplay\xgm\devices\Sound\legacy\2413tone.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\APU\nsfplay\xgm\devices\Sound\legacy\emu2413.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\APU\nsfplay\xgm\devices\Sound\legacy\vrc7tone_nuke.h">
-      <Filter>Header Files\Sound Driver Headers\Emulation Headers\Sound Chip Headers\External\nsfplay</Filter>
-    </ClInclude>
     <ClInclude Include="Source\APU\FDS.h">
       <Filter>Header Files\Sound Driver Headers\Emulation Headers\Sound Chip Headers</Filter>
     </ClInclude>
@@ -1496,8 +1478,23 @@
     <ClInclude Include="Source\APU\mesen\ModChannel.h">
       <Filter>Header Files\Sound Driver Headers\Emulation Headers\Sound Chip Headers\External\mesen</Filter>
     </ClInclude>
+    <ClInclude Include="Source\APU\mesen\Namco163Audio.h">
+      <Filter>Header Files\Sound Driver Headers\Emulation Headers</Filter>
+    </ClInclude>
     <ClInclude Include="Source\APU\ChannelLevelState.h">
       <Filter>Header Files\Sound Driver Headers\Emulation Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ConfigGUI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ConfigEmulation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\utils\handle_ptr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\rigtorp\SPSCQueue.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1563,52 +1560,9 @@
     <None Include="res\MainToolbar-256.bmp">
       <Filter>Resource Files\Bitmaps</Filter>
     </None>
-    <None Include="..\nsf driver\apu.s">
-      <Filter>NSF driver</Filter>
-    </None>
-    <None Include="..\nsf driver\driver.s">
-      <Filter>NSF driver</Filter>
-    </None>
-    <None Include="..\nsf driver\effects.s">
-      <Filter>NSF driver</Filter>
-    </None>
-    <None Include="..\nsf driver\fds.s">
-      <Filter>NSF driver</Filter>
-    </None>
-    <None Include="..\nsf driver\init.s">
-      <Filter>NSF driver</Filter>
-    </None>
-    <None Include="..\nsf driver\instrument.s">
-      <Filter>NSF driver</Filter>
-    </None>
-    <None Include="..\nsf driver\mmc5.s">
-      <Filter>NSF driver</Filter>
-    </None>
-    <None Include="..\nsf driver\player.s">
-      <Filter>NSF driver</Filter>
-    </None>
-    <None Include="..\nsf driver\vrc6.s">
-      <Filter>NSF driver</Filter>
-    </None>
-    <None Include="..\nsf driver\vrc7.s">
-      <Filter>NSF driver</Filter>
-    </None>
     <None Include="changelog.txt" />
-    <None Include="gpl.txt" />
     <None Include="specs.txt" />
     <None Include="0CC-readme.txt" />
-    <None Include="..\nsf driver\n163.s">
-      <Filter>NSF driver</Filter>
-    </None>
-    <None Include="..\nsf driver\nsf_wrap.s">
-      <Filter>NSF driver</Filter>
-    </None>
-    <None Include="..\nsf driver\periods.s">
-      <Filter>NSF driver</Filter>
-    </None>
-    <None Include="..\nsf driver\s5b.s">
-      <Filter>NSF driver</Filter>
-    </None>
     <None Include="Source\resampler\resample.inl">
       <Filter>Header Files\Dialog Boxes Headers\Instrument Headers\Related Headers\Resampler Headers</Filter>
     </None>

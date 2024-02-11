@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -865,7 +865,7 @@ void CPActionScrollValues::Redo(CMainFrame *pMainFrm) const
 					if (Note.EffNumber[k - COLUMN_EFF1] == EF_NONE) break;
 					if (bSingular) switch (Note.EffNumber[k - COLUMN_EFF1]) {
 					case EF_SWEEPUP: case EF_SWEEPDOWN: case EF_ARPEGGIO: case EF_VIBRATO: case EF_TREMOLO:
-					case EF_SLIDE_UP: case EF_SLIDE_DOWN: case EF_VOLUME_SLIDE: case EF_DELAYED_VOLUME: case EF_TRANSPOSE:
+					case EF_SLIDE_UP: case EF_SLIDE_DOWN: case EF_VOLUME_SLIDE: case EF_DELAYED_VOLUME: case EF_TRANSPOSE: case EF_TARGET_VOLUME_SLIDE:
 						unsigned char Hi = Note.EffParam[k - COLUMN_EFF1] >> 4;
 						unsigned char Lo = Note.EffParam[k - COLUMN_EFF1] & 0x0F;
 						WarpFunc(pPatternEditor->GetColumn() % 3 == 2 ? Hi : Lo, 0x10);

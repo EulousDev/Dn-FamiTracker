@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ namespace {
 			hOpen = InternetOpenW(L"Dn_FamiTracker", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
 			hConnect = InternetConnectW(hOpen, L"api.github.com",
 				INTERNET_DEFAULT_HTTPS_PORT, L"", L"", INTERNET_SERVICE_HTTP, 0, 0);
-			hRequest = HttpOpenRequestW(hConnect, L"GET", L"/repos/Gumball2415/Dn-FamiTracker/releases",
+			hRequest = HttpOpenRequestW(hConnect, L"GET", L"/repos/Dn-Programming-Core-Management/Dn-FamiTracker/releases",
 				L"HTTP/1.0", NULL, rgpszAcceptTypes,
 				INTERNET_FLAG_RELOAD | INTERNET_FLAG_SECURE | INTERNET_FLAG_NO_CACHE_WRITE, NULL);
 		}

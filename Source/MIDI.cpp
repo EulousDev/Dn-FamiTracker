@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -55,12 +55,11 @@ void CALLBACK CMIDI::MidiInProc(HMIDIIN hMidiIn, UINT wMsg, DWORD dwInstance, DW
 
 // Instance stuff
 
-CMIDI::CMIDI() : 
-	m_bInStarted(false), 
+CMIDI::CMIDI() :
+	m_bInStarted(false),
 	m_iInDevice(0),
 	m_iOutDevice(0),
-	m_iQueueHead(0), 
-	m_iQueueTail(0),
+	m_MidiQueue(MAX_QUEUE),
 	m_hMIDIIn(NULL),
 	m_hMIDIOut(NULL),
 	m_iTimingCounter(0)
@@ -144,9 +143,9 @@ bool CMIDI::OpenDevices(void)
 		midiOutReset(m_hMIDIOut);
 	}
 
-	m_csQueue.Lock();
-	m_iQueueHead = m_iQueueTail = 0;
-	m_csQueue.Unlock();
+	while (m_MidiQueue.front()) {
+		m_MidiQueue.pop();
+	}
 
 	return true;
 }
@@ -214,17 +213,14 @@ void CMIDI::SetOutputDevice(int Device)
 
 void CMIDI::Enqueue(unsigned char MsgType, unsigned char MsgChannel, unsigned char Data1, unsigned char Data2)
 {
-	m_csQueue.Lock();
-	
-	m_iMsgTypeQueue[m_iQueueHead] = MsgType;
-	m_iMsgChanQueue[m_iQueueHead] = MsgChannel;
-	m_iData1Queue[m_iQueueHead]   = Data1;
-	m_iData2Queue[m_iQueueHead]   = Data2;
-	m_iQuantization[m_iQueueHead] = m_iTimingCounter;
-
-	m_iQueueHead = (m_iQueueHead + 1) % MAX_QUEUE;
-
-	m_csQueue.Unlock();
+	// Ehh, dropped events are fine I guess...
+	(void) m_MidiQueue.try_push(MidiMessage{
+		(char)MsgType,
+		(char)MsgChannel,
+		(char)Data1,
+		(char)Data2,
+		(char)m_iTimingCounter,
+	});
 }
 
 void CMIDI::Event(unsigned char Status, unsigned char Data1, unsigned char Data2)
@@ -257,7 +253,7 @@ void CMIDI::Event(unsigned char Status, unsigned char Data1, unsigned char Data2
 	default:
 		switch (MsgType) {
 			case MIDI_MSG_NOTE_OFF:
-			case MIDI_MSG_NOTE_ON: 
+			case MIDI_MSG_NOTE_ON:
 			case MIDI_MSG_PITCH_WHEEL:
 				Enqueue(MsgType, MsgChannel, Data1, Data2);
 				pView->PostMessage(WM_USER_MIDI_EVENT);
@@ -269,22 +265,18 @@ void CMIDI::Event(unsigned char Status, unsigned char Data1, unsigned char Data2
 bool CMIDI::ReadMessage(unsigned char & Message, unsigned char & Channel, unsigned char & Data1, unsigned char & Data2)
 {
 	bool Result = false;
-	
-	m_csQueue.Lock();
 
-	if (m_iQueueHead != m_iQueueTail) {
+	if (auto pMidiMessage = m_MidiQueue.front()) {
 		Result = true;
 
-		Message = m_iMsgTypeQueue[m_iQueueTail];
-		Channel = m_iMsgChanQueue[m_iQueueTail];
-		Data1	= m_iData1Queue[m_iQueueTail];
-		Data2	= m_iData2Queue[m_iQueueTail];
-		m_iQuant = m_iQuantization[m_iQueueTail];
+		Message = pMidiMessage->MsgType;
+		Channel = pMidiMessage->MsgChan;
+		Data1	= pMidiMessage->Data1;
+		Data2	= pMidiMessage->Data2;
+		m_iQuant = pMidiMessage->Quantization;
 
-		m_iQueueTail = (m_iQueueTail + 1) % MAX_QUEUE;
+		m_MidiQueue.pop();
 	}
-
-	m_csQueue.Unlock();
 
 	return Result;
 }
@@ -368,12 +360,12 @@ bool CMIDI::IsAvailable() const
 	return m_hMIDIIn != NULL;
 }
 
-int CMIDI::GetInputDevice() const 
-{ 
-	return m_iInDevice; 
+int CMIDI::GetInputDevice() const
+{
+	return m_iInDevice;
 }
 
-int CMIDI::GetOutputDevice() const 
-{ 
-	return m_iOutDevice; 
+int CMIDI::GetOutputDevice() const
+{
+	return m_iOutDevice;
 }

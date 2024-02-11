@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #pragma once
 
 #include <mmsystem.h>
-#include <afxmt.h>
+#include "rigtorp/SPSCQueue.h"
 
 const int MIDI_MSG_NOTE_OFF			= 0x08;
 const int MIDI_MSG_NOTE_ON			= 0x09;
@@ -36,6 +36,14 @@ const int MIDI_MSG_CHANNEL_PRESSURE = 0x0D;
 const int MIDI_MSG_PITCH_WHEEL		= 0x0E;
 
 // CMIDI command target
+
+struct MidiMessage {
+	char MsgType;
+	char MsgChan;
+	char Data1;
+	char Data2;
+	char Quantization;
+};
 
 class CMIDI : public CObject
 {
@@ -96,14 +104,7 @@ private:
 	bool	m_bInStarted;
 
 	// MIDI queue
-	int		m_iQueueHead;
-	int		m_iQueueTail;
-
-	char	m_iMsgTypeQueue[MAX_QUEUE];
-	char	m_iMsgChanQueue[MAX_QUEUE];
-	char	m_iData1Queue[MAX_QUEUE];
-	char	m_iData2Queue[MAX_QUEUE];
-	char	m_iQuantization[MAX_QUEUE];
+	rigtorp::SPSCQueue<MidiMessage> m_MidiQueue;
 
 	int		m_iQuant;
 	int		m_iTimingCounter;
@@ -111,7 +112,4 @@ private:
 	// Device handles
 	HMIDIIN	 m_hMIDIIn;
 	HMIDIOUT m_hMIDIOut;
-
-	// Thread sync
-	CCriticalSection m_csQueue;
 };

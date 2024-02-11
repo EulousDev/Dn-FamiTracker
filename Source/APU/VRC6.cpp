@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -52,8 +52,8 @@ void CVRC6_Pulse::Write(uint16_t Address, uint8_t Value)
 			m_iDutyCycle = ((Value & 0x70) >> 4) + 1;
 			m_iVolume = Value & 0x0F;
 			if (m_iGate)
-				Mix(m_iVolume);
-  			break;
+				Mix(static_cast<int32_t>(m_iVolume * -1));
+			break;
 		case 0x01:
 			m_iPeriodLow = Value;
 			m_iPeriod = m_iPeriodLow + (m_iPeriodHigh << 8);
@@ -84,7 +84,7 @@ void CVRC6_Pulse::Process(int Time)
 		m_iCounter = m_iPeriod + 1;
 	
 		m_iDutyCycleCounter = (m_iDutyCycleCounter + 1) & 0x0F;
-		Mix((m_iGate || m_iDutyCycleCounter >= m_iDutyCycle) ? m_iVolume : 0);
+		Mix(static_cast<int32_t>(((m_iGate || m_iDutyCycleCounter >= m_iDutyCycle) ? m_iVolume : 0) * -1));
 	}
 
 	m_iCounter -= Time;
@@ -165,7 +165,7 @@ void CVRC6_Sawtooth::Process(int Time)
 		}
 
 		// The 5 highest bits of accumulator are sent to the mixer
-		Mix(m_iPhaseAccumulator >> 3);
+		Mix(static_cast<int32_t>(m_iPhaseAccumulator >> 3) * -1);
 	}
 
 	m_iCounter -= Time;

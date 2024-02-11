@@ -8,6 +8,12 @@ include(cmake_user_begin.cmake OPTIONAL)
 
 project(${project})
 
+# libsamplerate ships with 3 sinc tables of different qualities.
+# SRC_SINC_BEST_QUALITY uses a massive 1.36 megabyte sinc table,
+# and we don't even use SRC_SINC_BEST_QUALITY.
+# So turn it off to save space in binaries.
+set(LIBSAMPLERATE_ENABLE_SINC_BEST_CONVERTER FALSE CACHE BOOL "[libsamplerate] Enable Best Sinc Interpolator converter")
+
 # MFC based off https://github.com/Kitware/CMake/blob/master/Tests/MFC/CMakeLists.txt
     # also sets https://stackoverflow.com/questions/14172856/cmake-mt-md
 # Simpler approach (unimplemented): https://stackoverflow.com/questions/11580748/cmake-mfc
@@ -23,18 +29,29 @@ else ()
 endif ()
 include(cmake/mfc.cmake)
 
+# Acts like add_subdirectory(), but replaces Debug flags with RelWithDebugInfo flags.
+# Use for unconditionally building performance-sensitive libraries in debug mode.
+function(add_subdirectory_optimized)
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+
+    add_subdirectory(${ARGV})
+endfunction()
+
+# libsamplerate in debug mode burns lots of CPU,
+# so build with optimizations on even in debug mode.
+add_subdirectory_optimized("Source/libsamplerate" EXCLUDE_FROM_ALL)
+
 # compiling
 include(cmake/exe.cmake)
 
 #builds the .chm file
-if(WIN32)
-	add_custom_command(TARGET ${exe}
-		PRE_BUILD
-		COMMAND cmd /c ${CMAKE_CURRENT_SOURCE_DIR}/cmake/compile-chm.bat
-		COMMAND move Dn-Famitracker.chm ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>
-		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-		COMMENT "Generating help file...")
-endif()
+add_custom_command(TARGET ${exe}
+	PRE_BUILD
+	COMMAND cmd /c ${CMAKE_CURRENT_SOURCE_DIR}/cmake/compile-chm.bat
+	COMMAND move Dn-Famitracker.chm ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	COMMENT "Generating help file...")
 
 target_compile_features(${exe} PRIVATE cxx_std_17)
 
@@ -46,8 +63,28 @@ endif()
 
 
 # linking
-TARGET_LINK_LIBRARIES(${exe}
-        Dbghelp winmm comctl32 dsound Version htmlhelp)
+# Specify static MFC libraries nafxcw and Libcmt to avoid linker order issues
+if (STATIC_MSVCRT)
+	if (CMAKE_BUILD_TYPE MATCHES DEBUG)
+		TARGET_LINK_LIBRARIES(${exe}
+				Dbghelp winmm comctl32 Avrt Version htmlhelp
+				samplerate nafxcwd Libcmtd)
+	else ()
+		TARGET_LINK_LIBRARIES(${exe}
+				Dbghelp winmm comctl32 Avrt Version htmlhelp
+				samplerate nafxcw Libcmt)
+	endif ()
+else ()
+	if (CMAKE_BUILD_TYPE MATCHES DEBUG)
+		TARGET_LINK_LIBRARIES(${exe}
+				Dbghelp winmm comctl32 Avrt Version htmlhelp
+				samplerate MSVCRTD)
+	else ()
+		TARGET_LINK_LIBRARIES(${exe}
+				Dbghelp winmm comctl32 Avrt Version htmlhelp
+				samplerate MSVCRT)
+	endif ()
+endif ()
 
 # Dn-FamiTracker.rc includes res/Dn-FamiTracker.manifest.
 # To prevent manifest linking errors:

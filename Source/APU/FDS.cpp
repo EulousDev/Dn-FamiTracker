@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,15 +26,14 @@
 #include "APU.h"
 #include "FDS.h"
 #include "../RegisterState.h"		// // //
-
-#include <cstdint>
-#include <cmath>
+#define _USE_MATH_DEFINES
+#include <math.h>		// !! !! M_PI
 
 // FDS interface, actual FDS emulation is in FDSSound.cpp
 
 CFDS::CFDS()
 {
-	m_pRegisterLogger->AddRegisterRange(0x4040, 0x408F);		// // //
+	m_pRegisterLogger->AddRegisterRange(0x4040, 0x4098);		// // //
 
 	// Reset() is called by CAPU::SetExternalSound(), but let's call it ourself.
 	Reset();
@@ -52,14 +51,15 @@ void CFDS::Reset()
 	m_BlipFDS.clear();
 }
 
-constexpr float TWOPI = 2 * 3.141592653589793238462643383279502884f;
-
 void CFDS::UpdateFilter(blip_eq_t eq)
 {
 	m_SynthFDS.treble_eq(eq); // Apply 2A03 global EQ on top of FDS's dedicated lowpass.
 
-	// This line of code was copied from CMixer::AllocateBuffer(),
-	// which does some math in order to calculate the length of the Blip_Buffer.
+	// Blip_Buffer::set_sample_rate(new_rate, msec=250) treats the second msec argument
+	// (or its default value) as the length of the buffer.
+	//
+	// CMixer::AllocateBuffer() calls Blip_Buffer::set_sample_rate(new_rate, msec) on the
+	// global Blip_Buffer, and does some math in order to calculate its length.
 	// What nobody realized is that the value passed in is *always* 125 ms,
 	// modulo rounding error:
 	//
@@ -69,8 +69,8 @@ void CFDS::UpdateFilter(blip_eq_t eq)
 	//
 	// just... wtf.
 	//
-	// We can't access the length of the global Blip_Buffer, so leave the length as default.
-	// The default value of 250 ms is more than enough.
+	// We can't access the length of the global Blip_Buffer, so leave m_BlipFDS's length
+	// as default. The default value of 250 ms is more than enough.
 	m_BlipFDS.set_sample_rate(eq.sample_rate);
 
 	// BlipFDS is used to render FDS.
@@ -79,7 +79,7 @@ void CFDS::UpdateFilter(blip_eq_t eq)
 	// So BlipFDS should skip bass removal.
 	m_BlipFDS.bass_freq(0);
 
-	// Default cutoff frequency, will be overriden when UpdateFdsFilter() is called.
+	// Default cutoff frequency, will be overriden when UpdateFDSFilter() is called.
 	m_CutoffHz = 2000;
 	RecomputeFdsFilter();
 }
@@ -96,7 +96,7 @@ void CFDS::Write(uint16_t Address, uint8_t Value)
 
 uint8_t CFDS::Read(uint16_t Address, bool &Mapped)
 {
-	Mapped = ((0x4040 <= Address && Address <= 0x407f) || (0x4090 == Address) || (0x4092 == Address));
+	Mapped = ((0x4040 <= Address && Address <= 0x407f) || (0x4090 == Address) || (0x4092 == Address) || (0x4097 == Address));
 	return m_FDS.ReadRegister(Address);
 }
 
@@ -129,7 +129,6 @@ void CFDS::Process(uint32_t Time, Blip_Buffer& Output)
 	}
 
 	m_iTime += Time;
-
 }
 
 void CFDS::EndFrame(Blip_Buffer& Output, gsl::span<int16_t> TempBuffer)
@@ -153,22 +152,51 @@ void CFDS::EndFrame(Blip_Buffer& Output, gsl::span<int16_t> TempBuffer)
 		m_lowPassState = out + 1e-18f;  // prevent denormal numbers
 	}
 
-	Output.mix_samples_raw(unfilteredData.data(), unfilteredData.size());
+	Output.mix_samples_raw(unfilteredData.data(), static_cast<blip_nsamp_t>(unfilteredData.size()));
 
 	m_iTime = 0;
 }
 
 double CFDS::GetFreq(int Channel) const		// // //
 {
-	if (Channel) return 0.;
+	if (Channel == 1) return GetOutputFreq();	// hack for modulated pitch
+	if (Channel == 0) {
+		int Lo = m_pRegisterLogger->GetRegister(0x4082)->GetValue();
+		int Hi = m_pRegisterLogger->GetRegister(0x4083)->GetValue();
+		if (Hi & 0x80)
+			return 0.;
+		Lo |= (Hi << 8) & 0xF00;
+		return CAPU::BASE_FREQ_NTSC * (Lo / 4194304.);
+	}
+	return 0.;
+}
+
+int CFDS::GetModCounter() const
+{
+	return m_FDS.GetModCounter();
+}
+
+// get actual output frequency, modified by modulator
+double CFDS::GetOutputFreq() const
+{
 	int Lo = m_pRegisterLogger->GetRegister(0x4082)->GetValue();
 	int Hi = m_pRegisterLogger->GetRegister(0x4083)->GetValue();
 	if (Hi & 0x80)
 		return 0.;
 	Lo |= (Hi << 8) & 0xF00;
-	return CAPU::BASE_FREQ_NTSC * (Lo / 4194304.);
+	return CAPU::BASE_FREQ_NTSC * ((Lo + (int)m_FDS.GetModOutput()) / 4194304.);
+
 }
 
+double CFDS::GetModFreq() const
+{
+	int Lo = m_pRegisterLogger->GetRegister(0x4086)->GetValue();
+	int Hi = m_pRegisterLogger->GetRegister(0x4087)->GetValue();
+	if (Hi & 0x80)
+		return 0.;
+	Lo |= (Hi << 8) & 0xF00;
+	return CAPU::BASE_FREQ_NTSC * (Lo / 4194304.);
+}
 int CFDS::GetChannelLevel(int Channel)
 {
 	ASSERT(Channel == 0);
@@ -193,19 +221,18 @@ int CFDS::GetChannelLevelRange(int Channel) const
 	return 0;
 }
 
-void CFDS::UpdateFdsFilter(int CutoffHz)
+void CFDS::UpdateFDSFilter(int CutoffHz)
 {
 	m_CutoffHz = CutoffHz;
 	RecomputeFdsFilter();
 }
 
-void CFDS::UpdateMixLevel(double v)
+void CFDS::UpdateMixLevel(double v, bool UseSurveyMix)
 {
 	// (m_SynthFDS: FdsAudio) used to generate output samples between [0..63] inclusive,
 	// but was changed to  [0 .. 63*1152] inclusive to prevent quantization at low volumes.
-	// The following mixing levels match nsfplay's FDS output,
-	// using 2A03 Pulse as a baseline.
-	m_SynthFDS.volume(v * 1.122f, 256 * 1152);
+
+	m_SynthFDS.volume(UseSurveyMix ? v : (v * 1.122f), UseSurveyMix ? (63 * 1152) : (256 * 1152));
 }
 
 /// Input:
@@ -218,11 +245,11 @@ void CFDS::RecomputeFdsFilter()
 {
 	// Compute first-order lowpass coefficient from FDS cutoff frequency and sampling rate.
 	auto sampleRate_hz = float(m_BlipFDS.sample_rate());
-	auto cutoff_rad = TWOPI * (float)m_CutoffHz / sampleRate_hz;
+	auto cutoff_rad = 2 * M_PI * (float)m_CutoffHz / sampleRate_hz;
 
 	// This formula is approximate, but good enough because the FDS cutoff frequency is small
 	// compared to the audio sampling rate.
 	// Despite the exponential, this formula will never blow up
 	// because -cutoff_rad is negative, so e^(-cutoff_rad) lies between 0 and 1.
-	m_alpha = 1 - std::exp(-cutoff_rad);
+	m_alpha = 1 - (float)std::exp(-cutoff_rad);
 }

@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ public:
 	uint32_t GetTime();
 	void Output(uint32_t Noise, uint32_t Envelope);
 
-	double GetFrequency() const;
+	double GetFrequency() const override;
 
 private:
 	uint8_t m_iVolume;
@@ -69,7 +69,7 @@ public:
 	uint8_t	Read(uint16_t Address, bool &Mapped);
 	void	Log(uint16_t Address, uint8_t Value);		// // //
 
-	double	GetFreq(int Channel) const;		// // //
+	double	GetFreq(int Channel) const override;		// // //
 
 private:
 	void	WriteReg(uint8_t Port, uint8_t Value);

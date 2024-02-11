@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -198,12 +198,16 @@ int C2A03::GetChannelLevelRange(int Channel) const
 }
 
 
-void C2A03::UpdateMixingAPU1(double v) {
-	Synth2A03SS.volume(v, 10000);
+void C2A03::UpdateMixingAPU1(double v, bool UseSurveyMix) {
+	// NSFPlay output waveform ranges from 0 - 8191
+	// legacy mixing absolutely requires the range 10000
+	Synth2A03SS.volume(v, UseSurveyMix ? 8191 : 10000);
 }
 
-void C2A03::UpdateMixingAPU2(double v) {
-	Synth2A03TND.volume(v, 10000);
+void C2A03::UpdateMixingAPU2(double v, bool UseSurveyMix) {
+	// NSFPlay output waveform ranges from 0 - 8191
+	// legacy mixing absolutely requires the range 10000
+	Synth2A03TND.volume(v, UseSurveyMix ? 8191 : 10000);
 }
 
 void C2A03::ClockSequence()

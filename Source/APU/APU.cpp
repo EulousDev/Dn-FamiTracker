@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -44,8 +44,111 @@
 const int		CAPU::SEQUENCER_FREQUENCY	= 240;		// // //
 const uint32_t	CAPU::BASE_FREQ_NTSC		= 1789773;		// 72.667
 const uint32_t	CAPU::BASE_FREQ_PAL			= 1662607;
+const uint32_t	CAPU::BASE_FREQ_VRC7		= 3579545;
 const uint8_t	CAPU::FRAME_RATE_NTSC		= 60;
 const uint8_t	CAPU::FRAME_RATE_PAL		= 50;
+const uint16_t	CAPU::NSF_RATE_NTSC			= 16639;
+const uint16_t	CAPU::NSF_RATE_PAL			= 19997;
+
+const int OPLL_TONE_NUM = 9;
+
+// based off NSFPlay emu2413's hardware patch scheme
+const uint8_t CAPU::OPLL_DEFAULT_PATCHES[OPLL_TONE_NUM][19 * 8] =
+{
+	{
+#include "digital-sound-antiques/vrc7tone_nuke.h"
+	},
+	{
+#include "digital-sound-antiques/vrc7tone_rw.h"
+	},
+	{
+#include "digital-sound-antiques/vrc7tone_ft36.h"
+	},
+	{
+#include "digital-sound-antiques/vrc7tone_ft35.h"
+	},
+	{
+#include "digital-sound-antiques/vrc7tone_mo.h"
+	},
+	{
+#include "digital-sound-antiques/vrc7tone_kt2.h"
+	},
+	{
+#include "digital-sound-antiques/vrc7tone_kt1.h"
+	},
+	{
+#include "digital-sound-antiques/2413tone.h"
+	},
+	{
+#include "digital-sound-antiques/281btone.h"
+	},
+};
+
+const std::string CAPU::OPLL_PATCHNAME_VRC7[19] = {
+	"(custom patch)",
+	"Bell",
+	"Guitar",
+	"Piano",
+	"Flute",
+	"Clarinet",
+	"Rattling Bell",
+	"Trumpet",
+	"Reed Organ",
+	"Soft Bell",
+	"Xylophone",
+	"Vibraphone",
+	"Brass",
+	"Bass Guitar",
+	"Synthesizer",
+	"Chorus",
+	"Bass Drum",
+	"Snare Drum / Hi-Hat",
+	"Tom / Top Cymbal"
+};
+
+const std::string CAPU::OPLL_PATCHNAME_YM2413[19] = {
+	"(custom patch)",
+	"Violin",
+	"Guitar",
+	"Piano",
+	"Flute",
+	"Clarinet",
+	"Oboe",
+	"Trumpet",
+	"Organ",
+	"Horn",
+	"Synthesizer",
+	"Harpsichord",
+	"Vibraphone",
+	"Synthsizer Bass",
+	"Acoustic Bass",
+	"Electric Guitar",
+	"Bass Drum",
+	"Snare Drum / Hi-Hat",
+	"Tom / Top Cymbal"
+};
+
+const std::string CAPU::OPLL_PATCHNAME_YMF281B[19] = {
+	"(custom patch)",
+	"Electric Strings",
+	"Bow Wow",
+	"Electric Guitar",
+	"Organ",
+	"Clarinet",
+	"Saxophone",
+	"Trumpet",
+	"Street Organ",
+	"Synth Brass",
+	"Electric Piano",
+	"Bass",
+	"Vibraphone",
+	"Chimes",
+	"Tom Tom II",
+	"Noise",
+	"Bass Drum",
+	"Snare Drum / Hi-Hat",
+	"Tom / Top Cymbal"
+};
 
 const uint8_t CAPU::LENGTH_TABLE[] = {
 	0x0A, 0xFE, 0x14, 0x02, 0x28, 0x04, 0x50, 0x06,
@@ -61,6 +164,7 @@ CAPU::CAPU(IAudioCallback *pCallback) :		// // //
 	m_pMixer(new CMixer(this)),
 	m_p2A03(std::make_unique<C2A03>()),
 	m_pFDS(std::make_unique<CFDS>()),
+	m_pN163(std::make_unique<CN163>()),
 	m_pVRC7(std::make_unique<CVRC7>()),
 	m_iExternalSoundChips(0),
 	m_iCyclesToRun(0),
@@ -68,7 +172,6 @@ CAPU::CAPU(IAudioCallback *pCallback) :		// // //
 {
 	m_pMMC5 = new CMMC5(m_pMixer);
 	m_pVRC6 = new CVRC6(m_pMixer);
-	m_pN163 = new CN163(m_pMixer);
 	m_pS5B  = new CS5B(m_pMixer);
 
 	m_fLevelVRC7 = 1.0f;
@@ -83,7 +186,6 @@ CAPU::~CAPU()
 {
 	SAFE_RELEASE(m_pMMC5);
 	SAFE_RELEASE(m_pVRC6);
-	SAFE_RELEASE(m_pN163);
 	SAFE_RELEASE(m_pS5B);
 
 	SAFE_RELEASE(m_pMixer);
@@ -208,7 +310,7 @@ void CAPU::SetExternalSound(uint8_t Chip)
 	if (Chip & SNDCHIP_MMC5)
 		m_SoundChips.push_back(m_pMMC5);
 	if (Chip & SNDCHIP_N163)
-		m_SoundChips.push_back(m_pN163);
+		m_SoundChips2.push_back(m_pN163.get());
 	if (Chip & SNDCHIP_S5B)
 		m_SoundChips.push_back(m_pS5B);
 
@@ -399,11 +501,6 @@ void CAPU::Log()
 }
 #endif
 
-void CAPU::SetNamcoMixing(bool bLinear)		// // //
-{
-	m_pN163->SetMixingMethod(bLinear);
-}
-
 void CAPU::SetMeterDecayRate(int Type) const		// // // 050B
 {
 	m_pMixer->SetMeterDecayRate(Type);
@@ -447,6 +544,11 @@ double CAPU::GetFreq(int Chip, int Chan) const
 	}
 }
 
+int CAPU::GetFDSModCounter() const
+{
+	return m_pFDS->GetModCounter();
+}
+
 CRegisterState *CAPU::GetRegState(int Chip, int Reg) const		// // //
 {
 	auto PtrGetRegState = [&](auto const& pChip) {
@@ -465,24 +567,80 @@ CRegisterState *CAPU::GetRegState(int Chip, int Reg) const		// // //
 	}
 }
 
+void CAPUConfig::SetupEmulation(
+	bool N163DisableMultiplexing,
+	int UseOPLLPatchSet,
+	bool UseOPLLExt,
+	std::vector<uint8_t> UseOPLLPatchBytes,
+	std::vector<std::string> UseOPLLPatchNames)
+{
+	m_EmulatorConfig = EmulatorConfig{
+		N163DisableMultiplexing,
+		UseOPLLPatchSet,
+		UseOPLLExt,
+		UseOPLLPatchBytes,
+		UseOPLLPatchNames
+	};
+}
 
-void CAPUConfig::SetupMixer(int LowCut,
+void CAPUConfig::SetupMixer(
+	int LowCut,
 	int HighCut,
 	int HighDamp,
 	int Volume,
-	int FDSLowpass,
-	int VRC7Patchset)
+	bool UseSurveyMix,
+	int16_t FDSLowpass,
+	int16_t N163Lowpass,
+	std::vector<int16_t> DeviceMixOffsets)
 {
-	m_MixerConfig = MixerConfig{ LowCut, HighCut, HighDamp, float(Volume) / 100.0f, FDSLowpass, VRC7Patchset };
+	m_MixerConfig = MixerConfig{
+		LowCut,
+		HighCut,
+		HighDamp,
+		float(Volume) / 100.0f,
+		UseSurveyMix,
+		FDSLowpass,
+		N163Lowpass,
+		DeviceMixOffsets
+	};
 }
 
-void CAPUConfig::SetChipLevel(chip_level_t Chip, float LeveldB)
+// must be called after SetupMixer()
+// Device chip levels needs to be initialized first
+void CAPUConfig::SetChipLevel(chip_level_t Chip, float LeveldB, bool SurveyMix)
 {
-	float LevelLinear = powf(10, LeveldB / 20.0f);		// Convert dB to linear
+	// Convert dB to linear
+	float LevelLinear = 1.0f;
+	if (SurveyMix) {
+		// Compensate for blip_buffer output scaling differences
+		// values are derived by setting m_ChipLevels[] to 1.0
+		// and measuring the dB RMS delta between APU1 and other chips
+		// using methods described here: https://www.nesdev.org/wiki/NSFe#mixe
+		// TODO: investigate issues with rounding error
+		int16_t dblevelcorrection[CHIP_LEVEL_COUNT]{
+			0,		// APU1
+			-13,	// APU2
+			-494,	// VRC6
+			776,	// VRC7
+			-1700,	// FDS
+			869,	// MMC5
+			-1681,	// N163
+			108		// S5B
+		};
+		LevelLinear = powf(10, (LeveldB +
+			((static_cast<float>(dblevelcorrection[Chip]) / 100.0f)) +
+				(static_cast<float>(m_MixerConfig->DeviceMixOffsets[Chip]) / 10.0f)) / 20.0f);
+	}
+	else {
+		LevelLinear = powf(10, (LeveldB +
+			(static_cast<float>(m_MixerConfig->DeviceMixOffsets[Chip]) / 10.0f)) / 20.0f);
+	}
+
 	m_ChipLevels[Chip] = LevelLinear;
 }
 
-CAPUConfig::~CAPUConfig() noexcept(false) {
+CAPUConfig::~CAPUConfig() noexcept(false)
+{
 	// if unwinding, skip reconfiguring CAPU.
 	// it would be a *lot* easier to simply not call ~CAPUConfig in the unwind table...
 	// but C++ makes many simple things complicated and slow.
@@ -490,10 +648,10 @@ CAPUConfig::~CAPUConfig() noexcept(false) {
 		return;
 	}
 
-	bool mixingDirty = false;
+	bool RecomputeEmuMixState = false;
 
 	// Writes to CMixer::m_iExternalChip.
-	// This is read by CMixer::GetAttenuation(), which is called by CMixer::RecomputeMixing().
+	// This is read by CMixer::GetAttenuation(), which is called by CMixer::RecomputeEmuMixState().
 	if (m_ExternalSound) {
 		// This eagerly calls m_pMixer->SetClockRate(m_pMixer->BlipBuffer.clock_rate())
 		// (reinitializing the clock rate to the same value, but to a different set of expansion chips).
@@ -502,42 +660,36 @@ CAPUConfig::~CAPUConfig() noexcept(false) {
 		// CAPU::ChangeMachineRate() will call CMixer::SetClockRate() a second time.
 		// Ugly, but it works.
 		m_APU->SetExternalSound(*m_ExternalSound);
-		mixingDirty = true;
+		RecomputeEmuMixState = true;
 	}
 
-	// Writes to CAPU::m_fLevelVRC7 and CMixer::m_fLevel[...].
-	// This is read by CMixer::RecomputeMixing().
+	// Writes to CMixer::m_fLevel[...].
+	// This is read by CMixer::RecomputeEmuMixState().
 	for (int chip = 0; chip < CHIP_LEVEL_COUNT; chip++) {
 		if (m_ChipLevels[chip]) {
 			auto level = *m_ChipLevels[chip];
-			switch (chip) {
-			case CHIP_LEVEL_VRC7:
-				m_APU->m_fLevelVRC7 = level;
-				break;
-			default:
-				m_Mixer->SetChipLevel((chip_level_t)chip, level);
-				mixingDirty = true;
-				break;
-			}
+			m_Mixer->SetChipLevel((chip_level_t)chip, level);
+			RecomputeEmuMixState = true;
 		}
 	}
 
 	// Writes to CMixer::m_MixerConfig.
-	// This is read by CMixer::RecomputeMixing().
+	// This is read by CMixer::RecomputeEmuMixState().
 	if (m_MixerConfig) {
 		auto& cfg = *m_MixerConfig;
-		// Volume does not decrease as you enable expansion chips.
-		// This is probably a bug, but it's too late to change it now
-		// (it would break old modules).
-		m_APU->m_pVRC7->SetVolume(cfg.OverallVol * m_APU->m_fLevelVRC7);
 
 		m_Mixer->SetMixing(cfg);
-		mixingDirty = true;
+		RecomputeEmuMixState = true;
 	}
 
-	if (mixingDirty) {
-		// Volume decreases exponentially as you enable expansion chips linearly.
-		// This is probably a bug, but it might be too late to change it now.
-		m_Mixer->RecomputeMixing();
+	// Writes to CMixer::m_EmulatorConfig.
+	// This is read by CMixer::RecomputeEmuMixState().
+	if (m_EmulatorConfig) {
+		auto& cfg = *m_EmulatorConfig;
+		m_Mixer->SetEmulation(cfg);
+		RecomputeEmuMixState = true;
 	}
+
+	if (RecomputeEmuMixState)
+		m_Mixer->RecomputeEmuMixState();
 }

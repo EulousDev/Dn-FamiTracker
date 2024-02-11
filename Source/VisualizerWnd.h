@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -29,10 +29,65 @@
 
 #include "stdafx.h"		// // //
 #include <afxmt.h>		// Synchronization objects
+#include <atomic>
+#include <cstdint>
+#include <memory>
+#include <vector>
+#include <gsl/span>
 
 class CVisualizerBase;		// // //
+class CVisualizerScope;
 
 // CVisualizerWnd
+
+/// https://github.com/nyanpasu64/spectro2/blob/master/flip-cell/src/lib.rs
+class alignas(64) TripleBuffer {
+	// Constants
+	static constexpr uint8_t INIT_WRITE = 0;
+	static constexpr uint8_t INIT_SHARED = 1;
+	static constexpr uint8_t INIT_READ = 2;
+	static constexpr uint8_t SHARED_INDEX = 0x7F;
+	static constexpr uint8_t SHARED_WRITTEN = 0x80;
+
+	// Fields
+	// [3] box[...] short
+	std::unique_ptr<short[]> pBuffers[3];
+
+	// atomic u8
+	alignas(64) std::atomic<uint8_t> shared;
+
+	friend class Reader;
+	friend class Writer;
+
+public:
+	void Initialize(size_t Size);
+};
+
+class Reader {
+	TripleBuffer * m_pBuffer;
+	uint8_t m_ReadIndex;
+
+	friend class TripleBuffer;
+
+public:
+	Reader(TripleBuffer* pBuffer);
+	~Reader();
+	short const* Curr() const;
+	bool Fetch();
+};
+
+class Writer {
+	TripleBuffer* m_pBuffer;
+	uint8_t m_WriteIndex;
+
+	friend class TripleBuffer;
+
+public:
+	Writer(TripleBuffer* pBuffer);
+	~Writer();
+	short* Curr();
+	void Publish();
+};
 
 class CVisualizerWnd : public CWnd
 {
@@ -44,28 +99,41 @@ public:
 
 	HANDLE GetThreadHandle() const;		// // //
 
-	void SetSampleRate(int SampleRate);
-	void FlushSamples(short *Samples, int Count);
-	void ReportAudioProblem();
-
+	// Spawns new thread calling ThreadProc().
+	BOOL CreateEx(DWORD dwExStyle, LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID, CCreateContext* pContext = NULL);
 private:
 	static UINT ThreadProcFunc(LPVOID pParam);
 
 private:
-	void NextState();
 	UINT ThreadProc();
+	void NextState();
+
+public:
+	void SetSampleRate(int SampleRate);
+	void FlushSamples(gsl::span<const short> Samples);
+	void ReportAudioProblem();
 
 private:
 	static const int STATE_COUNT = 5;		// // //
 
 private:
 	CVisualizerBase *m_pStates[STATE_COUNT];
-	std::size_t m_iCurrentState;
+	int m_iCurrentState;
+	CVisualizerScope* m_pScope;  // Non-owning, points within m_pStates.
 
-	int	m_iBufferSize;
-	short *m_pBuffer1;
-	short *m_pBuffer2;
-	short *m_pFillBuffer;
+	// Samples/frames.
+	std::size_t m_ScopeBufferSize;
+
+	// Triple-buffer between audio and visualizer threads:
+	std::unique_ptr<TripleBuffer> m_pScopeData;
+	std::unique_ptr<TripleBuffer> m_pSpectrumData;
+
+	// box u8 (written by audio thread)
+	Writer m_ScopeWriter;
+	size_t m_ScopeWriteProgress;
+
+	Writer m_SpectrumWriter;
+	std::unique_ptr<short[]> m_pSpectrumHistory;
 
 	HANDLE m_hNewSamples;
 
@@ -73,13 +141,11 @@ private:
 
 	// Thread
 	CWinThread *m_pWorkerThread;
-	bool m_bThreadRunning;
+	std::atomic<bool> m_bThreadRunning;
 
-	CCriticalSection m_csBufferSelect;
+	// Held while (visualizer) rendering the image or (gui) painting on-screen or
+	// switching visualizers when clicked.
 	CCriticalSection m_csBuffer;
-
-public:
-	virtual BOOL CreateEx(DWORD dwExStyle, LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID, CCreateContext* pContext = NULL);
 
 protected:
 	DECLARE_MESSAGE_MAP()

@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -65,7 +65,7 @@ bool CSeqConversionDefault::ToValue(const std::string &String)
 		if (!GetNextInteger(b, e, m_iRepeat))
 			return false;
 	}
-	if (b != e || m_iRepeat <= 0)
+	if (b != e || m_iRepeat <= 0 || m_iValueDiv <= 0)
 		return false;
 	m_iValueInc = m_iTargetValue - m_iCurrentValue;
 	m_iRepeatCounter = m_iCounter = m_iValueMod = 0;

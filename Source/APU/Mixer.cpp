@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,6 +20,19 @@
 **
 ** Any permitted reproduction of these routines, in whole or in part,
 ** must bear this legend.
+*/
+
+/*
+
+ Hardware-based mixing levels are based on NSFPlay's default NSFe
+ mixe chunk values: https://github.com/bbbradsmith/nsfplay/blob/master/xgm/player/nsf/nsfplay.cpp#L843
+
+ Exported NSFe files use these constants with delta mix levels
+ (CFamiTrackerDoc::m_iDeviceLevelOffset[]) for the "mixe" chunk
+ https://www.nesdev.org/wiki/NSFe
+
+ The information below is kept for archival purposes.
+
 */
 
 /*
@@ -56,20 +69,21 @@
 
 #include "../stdafx.h"
 #include <memory>
+#include <algorithm>
 #include <cmath>
 #include "Mixer.h"
 #include "APU.h"
 #include "2A03.h"
 #include "FDS.h"
-#include "nsfplay/xgm/devices/Sound/legacy/emu2413.h"
+#include "N163.h"
 #include "utils/variadic_minmax.h"
 
 //#define LINEAR_MIXING
 
-static const float LEVEL_FALL_OFF_RATE	= 0.6f;
+static const float LEVEL_FALL_OFF_RATE = 0.6f;
 static const int   LEVEL_FALL_OFF_DELAY = 3;
 
-CMixer::CMixer(CAPU * Parent)
+CMixer::CMixer(CAPU* Parent)
 	: m_APU(Parent)
 {
 	memset(m_iChannels, 0, sizeof(int32_t) * CHANNELS);
@@ -79,6 +93,7 @@ CMixer::CMixer(CAPU * Parent)
 	m_fLevelAPU1 = 1.0f;
 	m_fLevelAPU2 = 1.0f;
 	m_fLevelVRC6 = 1.0f;
+	m_fLevelVRC7 = 1.0f;
 	m_fLevelMMC5 = 1.0f;
 	m_fLevelFDS = 1.0f;
 	m_fLevelN163 = 1.0f;
@@ -102,134 +117,146 @@ void CMixer::ExternalSound(int Chip)
 void CMixer::SetChipLevel(chip_level_t Chip, float Level)
 {
 	switch (Chip) {
-		case CHIP_LEVEL_APU1:
-			m_fLevelAPU1 = Level;
-			break;
-		case CHIP_LEVEL_APU2:
-			m_fLevelAPU2 = Level;
-			break;
-		case CHIP_LEVEL_VRC6:
-			m_fLevelVRC6 = Level;
-			break;
-		case CHIP_LEVEL_MMC5:
-			m_fLevelMMC5 = Level;
-			break;
-		case CHIP_LEVEL_FDS:
-			m_fLevelFDS = Level;
-			break;
-		case CHIP_LEVEL_N163:
-			m_fLevelN163 = Level;
-			break;
-		case CHIP_LEVEL_S5B:		// // // 050B
-			m_fLevelS5B = Level;
-			break;
-		case CHIP_LEVEL_VRC7: case CHIP_LEVEL_COUNT:
-			break;
+	case CHIP_LEVEL_APU1:
+		m_fLevelAPU1 = Level;
+		break;
+	case CHIP_LEVEL_APU2:
+		m_fLevelAPU2 = Level;
+		break;
+	case CHIP_LEVEL_VRC6:
+		m_fLevelVRC6 = Level;
+		break;
+	case CHIP_LEVEL_VRC7:
+		m_fLevelVRC7 = Level;
+		break;
+	case CHIP_LEVEL_FDS:
+		m_fLevelFDS = Level;
+		break;
+	case CHIP_LEVEL_MMC5:
+		m_fLevelMMC5 = Level;
+		break;
+	case CHIP_LEVEL_N163:
+		m_fLevelN163 = Level;
+		break;
+	case CHIP_LEVEL_S5B:		// // // 050B
+		m_fLevelS5B = Level;
+		break;
+	case CHIP_LEVEL_COUNT:
+		break;
 	}
 }
 
-float CMixer::GetAttenuation() const
+float CMixer::GetAttenuation(bool UseSurveyMix) const
 {
-	const float ATTENUATION_VRC6 = 0.80f;
-	const float ATTENUATION_VRC7 = 0.64f;
-	const float ATTENUATION_MMC5 = 0.83f;
-	const float ATTENUATION_FDS  = 0.90f;
-	const float ATTENUATION_N163 = 0.70f;
-	const float ATTENUATION_S5B  = 0.50f;		// // // 050B
+	float ATTENUATION_2A03 = 1.0f;
 
-	float Attenuation = 1.0f;
+	if (!UseSurveyMix) {
+		const float ATTENUATION_VRC6 = 0.80f;
+		const float ATTENUATION_VRC7 = 0.64f;
+		const float ATTENUATION_MMC5 = 0.83f;
+		const float ATTENUATION_FDS = 0.90f;
+		const float ATTENUATION_N163 = 0.70f;
+		const float ATTENUATION_S5B = 0.50f;		// // // 050B
 
-	// Increase headroom if some expansion chips are enabled
+		// Increase headroom if some expansion chips are enabled
 
-	if (m_iExternalChip & SNDCHIP_VRC6)
-		Attenuation *= ATTENUATION_VRC6;
+		if (m_iExternalChip & SNDCHIP_VRC6)
+			ATTENUATION_2A03 *= ATTENUATION_VRC6;
+		if (m_iExternalChip & SNDCHIP_VRC7)
+			ATTENUATION_2A03 *= ATTENUATION_VRC7;
+		if (m_iExternalChip & SNDCHIP_FDS)
+			ATTENUATION_2A03 *= ATTENUATION_FDS;
+		if (m_iExternalChip & SNDCHIP_MMC5)
+			ATTENUATION_2A03 *= ATTENUATION_MMC5;
+		if (m_iExternalChip & SNDCHIP_N163)
+			ATTENUATION_2A03 *= ATTENUATION_N163;
+		if (m_iExternalChip & SNDCHIP_S5B)		// // // 050B
+			ATTENUATION_2A03 *= ATTENUATION_S5B;
+	}
+	else {
+		// attenuation scaling is exponential based on total chips used
+		uint8_t TotalChipsUsed = 1;
+		if (m_iExternalChip & SNDCHIP_VRC6) TotalChipsUsed++;
+		if (m_iExternalChip & SNDCHIP_VRC7) TotalChipsUsed++;
+		if (m_iExternalChip & SNDCHIP_FDS) TotalChipsUsed++;
+		if (m_iExternalChip & SNDCHIP_MMC5) TotalChipsUsed++;
+		if (m_iExternalChip & SNDCHIP_N163) TotalChipsUsed++;
+		if (m_iExternalChip & SNDCHIP_S5B) TotalChipsUsed++;
 
-	if (m_iExternalChip & SNDCHIP_VRC7)
-		Attenuation *= ATTENUATION_VRC7;
+		ATTENUATION_2A03 *= static_cast<float>(1.0 / (float)TotalChipsUsed);
+	}
 
-	if (m_iExternalChip & SNDCHIP_MMC5)
-		Attenuation *= ATTENUATION_MMC5;
-
-	if (m_iExternalChip & SNDCHIP_FDS)
-		Attenuation *= ATTENUATION_FDS;
-
-	if (m_iExternalChip & SNDCHIP_N163)
-		Attenuation *= ATTENUATION_N163;
-
-	if (m_iExternalChip & SNDCHIP_S5B)		// // // 050B
-		Attenuation *= ATTENUATION_S5B;
-
-	return Attenuation;
+	return ATTENUATION_2A03;
 }
 
-constexpr int N163_RANGE = 1600;
-
-void CMixer::RecomputeMixing()
+void CMixer::RecomputeEmuMixState()
 {
 	auto LowCut = m_MixerConfig.LowCut;
 	auto HighCut = m_MixerConfig.HighCut;
 	auto HighDamp = m_MixerConfig.HighDamp;
-
-	float Volume = m_MixerConfig.OverallVol * GetAttenuation();
 
 	// Blip-buffer filtering
 	BlipBuffer.bass_freq(LowCut);
 
 	blip_eq_t eq(-HighDamp, HighCut, m_iSampleRate);
 
+	// See https://docs.google.com/document/d/19vtipTYI-vqL3-BPrE9HPjHmPpkFuIZKvWfevP3Oo_A/edit#heading=h.h70ipevgjbn7
+	// for an exploration of how I came to this design.
+	for (auto* chip : m_APU->m_SoundChips2) {
+		chip->UpdateFilter(eq);
+	}
+
 	SynthVRC6.treble_eq(eq);
 	SynthMMC5.treble_eq(eq);
 	SynthS5B.treble_eq(eq);
 
-	// See https://docs.google.com/document/d/19vtipTYI-vqL3-BPrE9HPjHmPpkFuIZKvWfevP3Oo_A/edit#heading=h.h70ipevgjbn7
-	// for an exploration of how I came to this design.
-	for (auto * chip : m_APU->m_SoundChips2) {
-		chip->UpdateFilter(eq);
-	}
-
-	// N163 special filtering
-	double n163_treble = 24;
-	long n163_rolloff = 12000;
-
-	if (HighDamp > n163_treble)
-		n163_treble = HighDamp;
-
-	if (n163_rolloff > HighCut)
-		n163_rolloff = HighCut;
-
-	blip_eq_t eq_n163(-n163_treble, n163_rolloff, m_iSampleRate);
-	SynthN163.treble_eq(eq_n163);
-
 	// Volume levels
-	auto & chip2A03 = *m_APU->m_p2A03;
-	auto & chipFDS = *m_APU->m_pFDS;
-	auto & chipVRC7 = *m_APU->m_pVRC7;
+	auto &chip2A03 = *m_APU->m_p2A03;
+	auto &chipVRC7 = *m_APU->m_pVRC7;
+	auto &chipFDS = *m_APU->m_pFDS;
+	auto &chipN163 = *m_APU->m_pN163;
+
+	bool UseSurveyMixing = m_MixerConfig.UseSurveyMix;
+
+	float Volume = m_MixerConfig.OverallVol * GetAttenuation(UseSurveyMixing);
+	
+	// Update mixing
 
 	// Maybe the range argument, as well as the constant factor in the volume,
 	// should be supplied by the CSoundChip2 subclass rather than CMixer.
-	chip2A03.UpdateMixingAPU1(Volume * m_fLevelAPU1);
-	chip2A03.UpdateMixingAPU2(Volume * m_fLevelAPU2);
-	chipFDS.UpdateMixLevel(Volume * m_fLevelFDS);
-	chipVRC7.UpdateMixLevel(Volume * m_fLevelFDS);
+	chip2A03.UpdateMixingAPU1(Volume * m_fLevelAPU1, UseSurveyMixing);
+	chip2A03.UpdateMixingAPU2(Volume * m_fLevelAPU2, UseSurveyMixing);
+	chipFDS.UpdateMixLevel(Volume * m_fLevelFDS, UseSurveyMixing);
+	chipN163.UpdateMixLevel(Volume * m_fLevelN163, UseSurveyMixing);
 
-	chipFDS.UpdateFdsFilter(m_MixerConfig.FDSLowpass);
-	chipVRC7.UpdatePatchSet(m_MixerConfig.VRC7Patchset);
+	if (UseSurveyMixing) {
+		chipVRC7.UpdateMixLevel(Volume * m_fLevelVRC7, UseSurveyMixing);
+		SynthVRC6.volume(Volume * m_fLevelVRC6, 15 + 15 + 31);	// P1 + P2 + Saw, linear
+		SynthMMC5.volume(Volume * m_fLevelMMC5, 15 + 15 + 255);	// P1 + P2 + DAC, linear
+		SynthS5B.volume(Volume * m_fLevelS5B, 255 + 255 + 255);	// 5B1 + 5B2 + 5B3, linear
+	}
+	else {
+		// match legacy expansion audio mixing
 
-	SynthVRC6.volume(Volume * 3.98333f * m_fLevelVRC6, 500);
-	SynthMMC5.volume(Volume * 1.18421f * m_fLevelMMC5, 130);
-	SynthN163.volume(Volume * 1.1f * m_fLevelN163, N163_RANGE);  // Not checked
-	SynthS5B.volume(Volume * m_fLevelS5B, 1200);  // Not checked
-}
+		// VRC7 level does not decrease as you enable expansion chips
+		chipVRC7.UpdateMixLevel(m_MixerConfig.OverallVol * m_fLevelVRC7);
+		SynthVRC6.volume(Volume * 3.98333f * m_fLevelVRC6, 500);
+		SynthMMC5.volume(Volume * 1.18421f * m_fLevelMMC5, 130);
+		SynthS5B.volume(Volume * m_fLevelS5B, 1200);  // Not checked
+	}
 
-/// CN163::Process() calls CMixer::SetNamcoVolume().
-/// This overrides the N163 volume (which is supposed to be set by
-/// CMixer::RecomputeMixing()) on every single emulation call.
-/// This is gross, but works and doesn't have any dependency ordering problems.
-void CMixer::SetNamcoVolume(float fVol)
-{
-	float fVolume = fVol * m_MixerConfig.OverallVol * GetAttenuation();
+	// Update per-chip filtering and emulation
 
-	SynthN163.volume(fVolume * 1.1f * m_fLevelN163, N163_RANGE);
+	chipN163.UpdateN163Filter(m_MixerConfig.N163Lowpass, m_EmulatorConfig.N163DisableMultiplexing);
+	chipFDS.UpdateFDSFilter(m_MixerConfig.FDSLowpass);
+
+	ASSERT(!m_EmulatorConfig.UseOPLLPatchBytes.empty());
+	ASSERT(m_EmulatorConfig.UseOPLLPatchBytes.size() == 19 * 8);
+
+	chipVRC7.UpdatePatchSet(
+		m_EmulatorConfig.UseOPLLPatchSet,
+		m_EmulatorConfig.UseOPLLExt,
+		&m_EmulatorConfig.UseOPLLPatchBytes[0]);
 }
 
 int CMixer::GetMeterDecayRate() const		// // // 050B
@@ -336,16 +363,15 @@ void CMixer::FinishBuffer(int t)
 	auto& chipVRC7 = *m_APU->m_pVRC7;
 	for (int i = 0; i < 6; ++i)
 		StoreChannelLevel(CHANID_VRC7_CH1 + i, get_channel_level(chipVRC7, i));
+
+	auto& chipN163 = *m_APU->m_pN163;
+	for (int i = 0; i < 8; i++)
+		StoreChannelLevel(CHANID_N163_CH1 + i, get_channel_level(chipN163, i));
 }
 
 //
 // Mixing
 //
-
-void CMixer::MixN163(int Value, int Time)
-{
-	SynthN163.offset(Time, Value, &BlipBuffer);
-}
 
 void CMixer::MixVRC6(int Value, int Time)
 {
@@ -377,9 +403,6 @@ void CMixer::AddValue(int ChanID, int Chip, int Value, int AbsValue, int FrameCy
 			// 2A03 nonlinear mixing bypasses CMixer now, and talks directly to BlipBuffer
 			// (obtained by CMixer::GetBuffer()).
 			break;
-		case SNDCHIP_N163:
-			MixN163(Value, FrameCycles);
-			break;
 		case SNDCHIP_MMC5:
 			// Value == AbsValue.
 			MixMMC5(Delta, FrameCycles);
@@ -410,15 +433,6 @@ void CMixer::StoreChannelLevel(int Channel, int Value)
 	// Adjust channel levels for some channels
 	if (Channel == CHANID_VRC6_SAWTOOTH)
 		AbsVol = (AbsVol * 3) / 4;
-
-	if (Channel >= CHANID_N163_CH1 && Channel <= CHANID_N163_CH8) {
-		AbsVol = (AbsVol * 2) / 15;
-		Channel = (7 - (Channel - CHANID_N163_CH1)) + CHANID_N163_CH1;
-	}
-
-	if (Channel >= CHANID_VRC7_CH1 && Channel <= CHANID_VRC7_CH6) {
-		AbsVol = (int)(logf((float)AbsVol) * 3.0f);
-	}
 
 	if (Channel >= CHANID_S5B_CH1 && Channel <= CHANID_S5B_CH3) {
 		AbsVol = (int)(logf((float)AbsVol) * 2.8f);

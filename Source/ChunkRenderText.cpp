@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -274,17 +274,25 @@ void CChunkRenderText::StoreSamplePointersChunk(CChunk *pChunk, CFile *pFile)
 	str.Format("%s:\n", pChunk->GetLabel());
 
 	if (len > 0) {
-		str.Append("\t.byte ");
 
 		int len = pChunk->GetLength();
-		for (int i = 0; i < len; ++i) {
-			str.AppendFormat("%i%s", pChunk->GetData(i), (i < len - 1) && (i % 3 != 2) ? ", " : "");
-			if (i % 3 == 2 && i < (len - 1))
-				str.Append("\n\t.byte ");
+		int samplenum = 0;
+		for (int i = 0; i < len; i += 3) {
+			CStringA label;
+			label.Format(LABEL_SAMPLE, samplenum);
+			str.Append("\t.byte ");
+			// location
+			//str.AppendFormat("%i, ", pChunk->GetData(i + 0));
+			str.AppendFormat("<((%s - $C000) >> 6), ", label);
+
+			// size
+			str.AppendFormat("%i, ", pChunk->GetData(i + 1));
+
+			//str.AppendFormat("%i", pChunk->GetData(i + 2));
+			str.AppendFormat("<.bank(%s)\n", label);
+			samplenum++;
 		}
 	}
-
-	str.Append("\n");
 
 	m_samplePointersStrings.Add(str);
 }
@@ -401,7 +409,7 @@ void CChunkRenderText::StorePatternChunk(CChunk *pChunk, CFile *pFile)
 	const std::vector<char> &vec = pChunk->GetStringData(0);
 	len = vec.size();
 
-	StoreByteString(&vec.front(), vec.size(), str, DEFAULT_LINE_BREAK);
+	StoreByteString(&vec.front(), static_cast<int>(vec.size()), str, DEFAULT_LINE_BREAK);
 /*
 	for (int i = 0; i < len; ++i) {
 		str.AppendFormat("$%02X", (unsigned char)vec[i]);

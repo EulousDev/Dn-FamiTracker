@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -132,7 +132,7 @@ bool CInstrumentFileTree::ScanDirectory(CString path, CMenu *pMenu, int level)
 			bool bDisabled = false;
 			if (!ScanDirectory(path + _T("\\") + fileFinder.GetFileName(), pSubMenu, level + 1))
 				bDisabled = true;
-			pMenu->AppendMenu(MF_STRING | MF_POPUP | (bDisabled ? MF_DISABLED : MF_ENABLED), (UINT)pSubMenu->m_hMenu, fileFinder.GetFileName());		
+			pMenu->AppendMenuA(MF_STRING | MF_POPUP | (bDisabled ? MF_DISABLED : MF_ENABLED), reinterpret_cast<UINT_PTR>(pSubMenu->m_hMenu), fileFinder.GetFileName());
 			bNoFile = false;
 		}
 	}

@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -59,18 +59,18 @@ public:
 
 	template <typename InputIt>
 	void CopyIn(InputIt Samples, std::size_t SampleCount) {
-		if (SampleCount > GetPoints()) {
-			SampleCount = GetPoints();
-			std::advance(Samples, SampleCount - GetPoints());
+		if (SampleCount > N) {
+			std::advance(Samples, SampleCount - N);
+			SampleCount = N;
 		}
 		std::copy(samples_.cbegin() + SampleCount, samples_.cend(), samples_.begin());
-		std::transform(Samples, Samples + SampleCount, samples_.begin(), [] (auto x) {
+		std::transform(Samples, Samples + SampleCount, samples_.end() - SampleCount, [] (auto x) {
 			return std::complex<double>(x, 0);
 		});
 	}
 
 	double GetIntensity(int i) const {
-		const double sqrtpoints = 1 << (FFT::details::floor_log2(GetPoints()) / 2);
+		const double sqrtpoints = 1 << (FFT::details::floor_log2(N) / 2);
 		return std::abs(buffer_[i]) / sqrtpoints;
 	}
 

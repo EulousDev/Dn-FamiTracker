@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ stOldSettingContext::stOldSettingContext()
 stOldSettingContext::~stOldSettingContext()
 {
 	CString s;
-	s.LoadString(AFX_IDS_APP_TITLE);
+	s.LoadString(theApp.m_hInstance, AFX_IDS_APP_TITLE);
 	theApp.m_pszProfileName = _tcsdup(s);
 }
 
@@ -79,7 +79,7 @@ void CSettings::SetupSettings()
 	// All settings are loaded on program start and saved when closing the program
 	//
 
-	// The SETTING macros takes four arguments: 
+	// The SETTING macros takes four arguments:
 	//
 	//  1. Registry section
 	//  2. Registry key name
@@ -134,9 +134,11 @@ void CSettings::SetupSettings()
 	SETTING_BOOL("General", "Hexadecimal keypad", false, &General.bHexKeypad);
 	SETTING_BOOL("General", "Multi-frame selection", false, &General.bMultiFrameSel);
 	SETTING_BOOL("General", "Check for new versions", true, &General.bCheckVersion);
-	// // !!
-	SETTING_INT("Appearance", "Idle refresh rate", 100, &General.iLowRefreshRate);
-	SETTING_INT("Appearance", "Maximum frame editor channel view", 8, &General.iMaxChannelView);		// // !!
+
+	// GUI
+	SETTING_INT("GUI", "Idle refresh rate", 100, &GUI.iLowRefreshRate);
+	SETTING_INT("GUI", "Maximum frame editor channel view", 28, &GUI.iMaxChannelView);		// // !!
+	SETTING_BOOL("GUI", "Precise register pitch view", true, &GUI.bPreciseRegPitch);
 
 	// // // Version / Compatibility info
 	SETTING_INT("Version", "Module error level", MODULE_ERROR_DEFAULT, &Version.iErrorLevel);
@@ -151,7 +153,6 @@ void CSettings::SetupSettings()
 	// Sound
 	SETTING_INT("Sound", "Audio Device", 0, &Sound.iDevice);
 	SETTING_INT("Sound", "Sample rate",	44100, &Sound.iSampleRate);
-	SETTING_INT("Sound", "Sample size", 16, &Sound.iSampleSize);
 	SETTING_INT("Sound", "Buffer length", 40, &Sound.iBufferLength);
 	SETTING_INT("Sound", "Bass filter freq", 30, &Sound.iBassFilter);
 	SETTING_INT("Sound", "Treble filter freq", 12000, &Sound.iTrebleFilter);
@@ -196,7 +197,7 @@ void CSettings::SetupSettings()
 		->UpdateDefault("Appearance", "Pattern colors");
 	SETTING_BOOL("Appearance", "Display flats", false, &Appearance.bDisplayFlats)
 		->UpdateDefault("Appearance", "Display flats");
-	
+
 	// Window position
 	SETTING_INT("Window position", "Left", 100, &WindowPos.iLeft);
 	SETTING_INT("Window position", "Top", 100, &WindowPos.iTop);
@@ -221,29 +222,42 @@ void CSettings::SetupSettings()
 	SETTING_STRING("Paths", "FTI path", "", &Paths[PATH_FTI]);
 	SETTING_STRING("Paths", "DMC path", "", &Paths[PATH_DMC]);
 	SETTING_STRING("Paths", "WAV path", "", &Paths[PATH_WAV_IMPORT]);
-	
+
 	//SETTING_STRING("Paths", "NSF path", "", &Paths[PATH_NSF]);
 	//SETTING_STRING("Paths", "TXT Export path", "", &Paths[PATH_EXPORT]);
 
 	SETTING_STRING("Paths", "Instrument menu", "", &InstrumentMenuPath);
 
 	// Mixing
+		// Chip mixing levels, described in centibels.
 	SETTING_INT("Mixer", "APU1", 0, &ChipLevels.iLevelAPU1);
 	SETTING_INT("Mixer", "APU2", 0, &ChipLevels.iLevelAPU2);
 	SETTING_INT("Mixer", "VRC6", 0, &ChipLevels.iLevelVRC6);
 	SETTING_INT("Mixer", "VRC7", 0, &ChipLevels.iLevelVRC7);
-	SETTING_INT("Mixer", "MMC5", 0, &ChipLevels.iLevelMMC5);
 	SETTING_INT("Mixer", "FDS", 0, &ChipLevels.iLevelFDS);
+	SETTING_INT("Mixer", "MMC5", 0, &ChipLevels.iLevelMMC5);
 	SETTING_INT("Mixer", "N163", 0, &ChipLevels.iLevelN163);
 	SETTING_INT("Mixer", "S5B", 0, &ChipLevels.iLevelS5B);
+		// Survey mixing levels, described in millibels.
+		// Default values derived from NSFplay
+		// https://github.com/bbbradsmith/nsfplay/blob/master/xgm/player/nsf/nsfplay.cpp#L843
+	SETTING_INT("Mixer", "APU1 survey level", 0, &ChipLevels.iSurveyMixAPU1);
+	SETTING_INT("Mixer", "APU2 survey level", -20, &ChipLevels.iSurveyMixAPU2);
+	SETTING_INT("Mixer", "VRC6 survey level", 0, &ChipLevels.iSurveyMixVRC6);
+	SETTING_INT("Mixer", "VRC7 survey level", 1340, &ChipLevels.iSurveyMixVRC7);
+	SETTING_INT("Mixer", "FDS survey level", 690, &ChipLevels.iSurveyMixFDS);
+	SETTING_INT("Mixer", "MMC5 survey level", 0, &ChipLevels.iSurveyMixMMC5);
+	SETTING_INT("Mixer", "N163 survey level", 1540, &ChipLevels.iSurveyMixN163);
+	SETTING_INT("Mixer", "S5B survey level", -250, &ChipLevels.iSurveyMixS5B);
 
 	// Emulation
+		// VRC7
+	SETTING_INT("Emulation", "VRC7 hardware patch", PATCH_NUKE, &Emulation.iVRC7Patch);
 		// FDS
 	SETTING_INT("Emulation", "FDS lowpass filter cutoff", 2000, &Emulation.iFDSLowpass);
 		// N163
 	SETTING_BOOL("Emulation", "N163 multiplexing", true, &Emulation.bNamcoMixing);
-		// VRC7
-	SETTING_INT("Emulation", "VRC7 hardware patch", PATCH_NUKE, &Emulation.iVRC7Patch);
+	SETTING_INT("Emulation", "N163 lowpass filter cutoff", 12000, &Emulation.iN163Lowpass);
 }
 
 template<class T>

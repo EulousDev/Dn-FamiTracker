@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -37,8 +37,8 @@ enum EDIT_STYLES {		// // // renamed
 enum module_error_level_t {		// // //
 	MODULE_ERROR_NONE,		/*!< No error checking at all (warning) */
 	MODULE_ERROR_DEFAULT,	/*!< Usual error checking */
-	MODULE_ERROR_OFFICIAL,	/*!< Special bounds checking according to the official build */
 	MODULE_ERROR_STRICT,	/*!< Extra validation for some values */
+	MODULE_ERROR_MAX = MODULE_ERROR_STRICT,
 };
 
 enum WIN_STATES {
@@ -157,9 +157,13 @@ public:
 		bool	bHexKeypad;
 		bool	bMultiFrameSel;
 		bool	bCheckVersion;		// // //
+	} General;
+
+	struct {
 		int		iLowRefreshRate;	// // !!
 		int		iMaxChannelView;	// // !!
-	} General;
+		bool	bPreciseRegPitch;
+	} GUI;
 
 	struct {
 		int		iErrorLevel;
@@ -168,7 +172,6 @@ public:
 	struct {
 		int		iDevice;
 		int		iSampleRate;
-		int		iSampleSize;
 		int		iBufferLength;
 		int		iBassFilter;
 		int		iTrebleFilter;
@@ -245,10 +248,18 @@ public:
 		int		iLevelAPU2;
 		int		iLevelVRC6;
 		int		iLevelVRC7;
-		int		iLevelMMC5;
 		int		iLevelFDS;
+		int		iLevelMMC5;
 		int		iLevelN163;
 		int		iLevelS5B;
+		int		iSurveyMixAPU1;
+		int		iSurveyMixAPU2;
+		int		iSurveyMixVRC6;
+		int		iSurveyMixVRC7;
+		int		iSurveyMixFDS;
+		int		iSurveyMixMMC5;
+		int		iSurveyMixN163;
+		int		iSurveyMixS5B;
 	} ChipLevels;
 
 	struct {
@@ -256,6 +267,7 @@ public:
 		int		iFDSLowpass;
 		// N163
 		bool	bNamcoMixing;		// // //
+		int		iN163Lowpass;
 		// VRC7
 		int		iVRC7Patch;
 	} Emulation;

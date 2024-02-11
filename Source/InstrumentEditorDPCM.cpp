@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -221,6 +221,7 @@ void CInstrumentEditorDPCM::UpdateKey(int Index)
 
 	pTableListCtrl->SetItemText(Index, 1, PitchStr);
 	pTableListCtrl->SetItemText(Index, 2, NameStr);
+	GetDocument()->UpdateAllViews(NULL, UPDATE_PATTERN);	// // //
 }
 
 void CInstrumentEditorDPCM::BuildSampleList()
@@ -256,6 +257,7 @@ void CInstrumentEditorDPCM::BuildSampleList()
 		MakeIntString(MAX_SAMPLE_SPACE / 0x400));
 	
 	SetDlgItemText(IDC_SPACE, Text);
+	GetDocument()->UpdateAllViews(NULL, UPDATE_PATTERN);	// // //
 }
 
 // When saved in NSF, the samples has to be aligned at even 6-bits addresses

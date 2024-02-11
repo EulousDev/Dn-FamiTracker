@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -130,7 +130,7 @@ const std::vector<stAccelEntry> CAccelerator::DEFAULT_TABLE {
 	{_T("Compact View"),				MOD_NONE,		0,				IDC_COMPACT_TOGGLE},				// // //
 };
 
-const int CAccelerator::ACCEL_COUNT = DEFAULT_TABLE.size();
+const int CAccelerator::ACCEL_COUNT = static_cast<int>(DEFAULT_TABLE.size());
 
 // Registry key
 LPCTSTR CAccelerator::SHORTCUTS_SECTION = _T("Shortcuts");

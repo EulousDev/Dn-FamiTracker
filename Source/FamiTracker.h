@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -27,8 +27,9 @@
 
 // FamiTracker.h : main header file for the FamiTracker application
 
-#include <thread>		// // //
+#include <memory>
 #include <string>
+#include <thread>		// // //
 
 // Support DLL translations
 #define SUPPORT_TRANSLATIONS
@@ -41,7 +42,7 @@
 
 // Inter-process commands
 enum {
-	IPC_LOAD = 1,	
+	IPC_LOAD = 1,
 	IPC_LOAD_PLAY
 };
 
@@ -52,7 +53,7 @@ public:
 	CFTCommandLineInfo();
 	virtual void ParseParam(const TCHAR* pszParam, BOOL bFlag, BOOL bLast);
 public:
-	bool m_bHelp;		// // !!
+	bool m_bHelp;		// !! !!
 	bool m_bLog;
 	bool m_bExport;
 	bool m_bPlay;
@@ -117,8 +118,10 @@ public:
 	void			ReloadColorScheme();
 	int				GetCPUUsage() const;
 	bool			IsThemeActive() const;
-	void			RemoveSoundGenerator();
 	void			RefreshFrameEditor();
+	void			EnableMFCPrint();
+	void			DisplayMessage(LPCTSTR lpszText, UINT nType = 0, UINT nIDHelp = 0);
+	void			DisplayMessage(UINT nIDPrompt, UINT nType = 0, UINT nIDHelp = 0);
 	void			ThreadDisplayMessage(LPCTSTR lpszText, UINT nType = 0, UINT nIDHelp = 0);
 	void			ThreadDisplayMessage(UINT nIDPrompt, UINT nType = 0, UINT nIDHelp = 0);
 
@@ -135,11 +138,11 @@ public:
 	// Get-functions
 	CMainFrame		*GetMainFrame() const;		// // //
 	CAccelerator	*GetAccelerator() const		{ ASSERT(m_pAccel); return m_pAccel; }
-	CSoundGen		*GetSoundGenerator() const	{ ASSERT(m_pSoundGenerator); return m_pSoundGenerator; }
+	CSoundGen		*GetSoundGenerator() const	{ ASSERT(m_pSoundGenerator); return m_pSoundGenerator.get(); }
 	CMIDI			*GetMIDI() const			{ ASSERT(m_pMIDI); return m_pMIDI; }
 	CSettings		*GetSettings() const		{ ASSERT(m_pSettings); return m_pSettings; }
 	CChannelMap		*GetChannelMap() const		{ ASSERT(m_pChannelMap); return m_pChannelMap; }
-	
+
 	CCustomExporters *GetCustomExporters() const;
 
 	//
@@ -160,7 +163,7 @@ private:
 	// Objects
 	CMIDI			*m_pMIDI;
 	CAccelerator	*m_pAccel;					// Keyboard accelerator
-	CSoundGen		*m_pSoundGenerator;			// Sound synth & player
+	std::shared_ptr<CSoundGen> m_pSoundGenerator;			// Sound synth & player
 	CSettings		*m_pSettings;				// Program settings
 	CChannelMap		*m_pChannelMap;
 
@@ -170,7 +173,9 @@ private:
 	CMutex			*m_pInstanceMutex;
 	HANDLE			m_hWndMapFile;
 
+	bool m_CoInitialized;
 	bool			m_bRunning = false;		// // //
+	bool			m_bIsCLI = false;
 	bool			m_bThemeActive;
 
 	bool			m_bVersionReady;
@@ -186,7 +191,7 @@ public:
 	// Overrides
 public:
 	virtual BOOL InitInstance();
-	virtual int ExitInstance();	
+	virtual int ExitInstance();
 
 	// Implementation
 	DECLARE_MESSAGE_MAP()

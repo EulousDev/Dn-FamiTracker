@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -143,7 +143,7 @@ void CSquare::Process(uint32_t Time)
 		m_iTime		+= m_iCounter;
 		m_iCounter	 = m_iPeriod + 1;
 		uint8_t Volume = m_iEnvelopeFix ? m_iFixedVolume : m_iEnvelopeVolume;
-		Mix(Valid && DUTY_TABLE[m_iDutyLength][m_iDutyCycle] ? Volume : 0);
+		Mix(static_cast<int32_t>(Valid && DUTY_TABLE[m_iDutyLength][m_iDutyCycle] ? Volume : 0) * -1);
 		m_iDutyCycle = (m_iDutyCycle + 1) & 0x0F;
 	}
 

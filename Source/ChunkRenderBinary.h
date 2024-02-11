@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -38,10 +38,10 @@ protected:
 	void Store(const void *pData, unsigned int Size);
 	void Fill(unsigned int Size);
 	unsigned int GetWritten() const;
+	unsigned int m_iDataWritten;
 
 private:
 	CFile		*m_pFile;
-	unsigned int m_iDataWritten;
 };
 
 // Binary data render
@@ -72,6 +72,7 @@ public:
 	void StoreSamples(const std::vector<const CDSample*> &Samples);
 	void StoreSamplesBankswitched(const std::vector<const CDSample*> &Samples);
 	int  GetBankCount() const;
+	int  GetDATAChunkSize() const;
 
 protected:
 	void StoreChunk(const CChunk *pChunk);

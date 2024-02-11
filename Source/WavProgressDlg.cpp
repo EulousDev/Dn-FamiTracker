@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -76,8 +76,8 @@ BOOL CWavProgressDlg::OnInitDialog()
 	CView *pView = static_cast<CFrameWnd*>(AfxGetMainWnd())->GetActiveView();		// // //
 	CSoundGen *pSoundGen = theApp.GetSoundGenerator();
 
-	m_iTimerPeriod = theApp.GetSettings()->General.iLowRefreshRate;
-	
+	m_iTimerPeriod = theApp.GetSettings()->GUI.iLowRefreshRate;
+
 	pView->Invalidate();
 	pView->RedrawWindow();
 
@@ -101,7 +101,7 @@ void CWavProgressDlg::OnTimer(UINT_PTR nIDEvent)
 	// Update progress status
 	CString Text;
 	DWORD Time = (GetTickCount() - m_dwStartTime) / 1000;
-	
+
 	CProgressCtrl *pProgressBar = static_cast<CProgressCtrl*>(GetDlgItem(IDC_PROGRESS_BAR));
 	CSoundGen *pSoundGen = theApp.GetSoundGenerator();
 
@@ -172,7 +172,7 @@ void CWavProgressDlg::OnCancel()
 
 	if (pSoundGen->IsRendering()) {
 		//pSoundGen->StopRendering();
-		pSoundGen->PostThreadMessage(WM_USER_STOP_RENDER, 0, 0);
+		pSoundGen->PostGuiMessage(WM_USER_STOP_RENDER, 0, 0);
 	}
 	CancelRender = true;
 

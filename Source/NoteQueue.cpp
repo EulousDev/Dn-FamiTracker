@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -29,8 +29,8 @@
 enum class CNoteChannelQueue::note_state_t {HOLD, RELEASE};
 
 CNoteChannelQueue::CNoteChannelQueue(std::vector<unsigned> Ch) :
-	m_iChannelMapID(Ch), m_iChannelCount(Ch.size()),
-	m_iCurrentNote(Ch.size(), -1), m_bChannelMute(Ch.size())
+	m_iChannelMapID(Ch), m_iChannelCount(static_cast<int>(Ch.size())),
+	m_iCurrentNote(static_cast<unsigned>(Ch.size()), -1), m_bChannelMute(static_cast<int>(Ch.size()))
 {
 }
 

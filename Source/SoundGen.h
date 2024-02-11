@@ -1,10 +1,10 @@
 /*
 ** FamiTracker - NES/Famicom sound tracker
-** Copyright (C) 2005-2015 Jonathan Liss
+** Copyright (C) 2005-2020 Jonathan Liss
 **
 ** 0CC-FamiTracker is (C) 2014-2018 HertzDevil
 **
-** Dn-FamiTracker is (C) 2020-2021 D.P.C.M.
+** Dn-FamiTracker is (C) 2020-2024 D.P.C.M.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -28,19 +28,26 @@
 // This thread will take care of the NES sound generation
 //
 
-#include <afxmt.h>		// Synchronization objects
+#include "gsl/span"
+#include "rigtorp/SPSCQueue.h"
+#include "libsamplerate/include/samplerate.h"
+#include "utils/handle_ptr.h"
+#include "yamc/fair_mutex.hpp"
 #include <queue>		// // //
 #include "Common.h"
+#include "FamiTrackerTypes.h"
 
 #include <atomic>
+#include <cstdint>
 #include <memory>
-#include <mutex>
+#include <thread>
 
 const int VIBRATO_LENGTH = 256;
 const int TREMOLO_LENGTH = 256;
 
 // Custom messages
-enum { 
+enum GuiMessageId : UINT {
+	AM_QUIT = WM_QUIT,
 	WM_USER_SILENT_ALL = WM_USER + 1,
 	WM_USER_LOAD_SETTINGS,
 	WM_USER_PLAY,
@@ -56,6 +63,12 @@ enum {
 	WM_USER_REMOVE_DOCUMENT
 };
 
+struct GuiMessage {
+	GuiMessageId message;
+	WPARAM wParam;
+	LPARAM lParam;
+};
+
 // Player modes
 enum play_mode_t {
 	MODE_PLAY,				// Play from top of pattern
@@ -66,9 +79,9 @@ enum play_mode_t {
 	MODE_PLAY_MARKER,		// // // 050B (row marker, aka "bookmark")
 };
 
-enum render_end_t { 
-	SONG_TIME_LIMIT, 
-	SONG_LOOP_LIMIT 
+enum render_end_t {
+	SONG_TIME_LIMIT,
+	SONG_LOOP_LIMIT
 };
 
 class stChanNote;		// // //
@@ -82,8 +95,8 @@ class CFamiTrackerDoc;
 class CInstrument;		// // //
 class CSequence;		// // //
 class CAPU;
-class CDSound;
-class CDSoundChannel;
+class CSoundInterface;
+class CSoundStream;
 class CWaveFile;		// // //
 class CVisualizerWnd;
 class CDSample;
@@ -94,10 +107,10 @@ class CRegisterState;		// // //
 
 // CSoundGen
 
-class CSoundGen : public CWinThread, IAudioCallback
+using FairMutex = yamc::fair::mutex;
+
+class CSoundGen : IAudioCallback
 {
-protected:
-	DECLARE_DYNCREATE(CSoundGen)
 public:
 	CSoundGen();
 	virtual ~CSoundGen();
@@ -110,7 +123,7 @@ private:		// // //
 	//
 public:
 
-	// One time initialization 
+	// One time initialization
 	void		AssignDocument(CFamiTrackerDoc *pDoc);
 	void		AssignView(CFamiTrackerView *pView);
 	void		RemoveDocument();
@@ -121,10 +134,32 @@ public:
 	void		SelectChip(int Chip);
 	void		LoadMachineSettings();		// // // 050B
 
+	// Thread management functions
+	bool BeginThread(std::shared_ptr<CSoundGen> self);
+
+private:
+	void ThreadEntry();
+
+public:
+	bool PostGuiMessage(
+		GuiMessageId message,
+		WPARAM wParam,
+		LPARAM lParam);
+
 	// Sound
-	bool		InitializeSound(HWND hWnd);
+
+	/// Waits for room to write audio to the output buffer.
+	///
+	/// If SkipIfWritable is true, check for room and if so return immediately. If
+	/// SkipIfWritable is false, wait for WASAPI to make a full block of space available
+	/// to write.
+	///
+	/// If ready to write audio, writes room available to parameters and returns true.
+	/// If waiting for buffer failed (due to GUI interruption or audio timeout),
+	/// returns false.
+	bool TryWaitForWritable(uint32_t& framesWritable, bool SkipIfWritable);
 	void		FlushBuffer(int16_t const * pBuffer, uint32_t Size);
-	CDSound		*GetSoundInterface() const { return m_pDSound; };
+	CSoundInterface		*GetSoundInterface() const { return m_pSoundInterface; };
 
 	void		Interrupt() const;
 	bool		GetSoundTimeout() const;
@@ -143,10 +178,13 @@ public:
 	void		 GenerateVibratoTable(vibrato_t Type);
 	void		 SetupVibratoTable(vibrato_t Type);
 	int			 ReadVibratoTable(int index) const;
+
+	// Period
+	// Generating and setting up the period tables is already done in DocumentPropertiesChanged()
 	int			 ReadPeriodTable(int Index, int Table) const;		// // //
 
 	// Player interface
-	void		 StartPlayer(play_mode_t Mode, int Track);	
+	void		 StartPlayer(play_mode_t Mode, int Track);
 	void		 StopPlayer();
 	void		 ResetPlayer(int Track);
 	void		 LoadSettings();
@@ -176,7 +214,7 @@ public:
 	bool		 RenderToFile(LPTSTR pFile, render_end_t SongEndType, int SongEndParam, int Track);
 	void		 StopRendering();
 	void		 GetRenderStat(int &Frame, int &Time, bool &Done, int &FramesToRender, int &Row, int &RowCount) const;
-	bool		 IsRendering() const;	
+	bool		 IsRendering() const;
 	bool		 IsBackgroundTask() const;
 
 	// Sample previewing
@@ -195,6 +233,7 @@ public:
 	uint8_t		GetReg(int Chip, int Reg) const;
 	CRegisterState *GetRegState(unsigned Chip, unsigned Reg) const;		// // //
 	double		GetChannelFrequency(unsigned Chip, int Channel) const;		// // //
+	int		GetFDSModCounter() const;		// TODO: reading $4097 returns $00 for some reason, fix that and remove this hack instead
 	CString		RecallChannelState(int Channel) const;		// // //
 
 	// FDS & N163 wave preview
@@ -205,7 +244,6 @@ public:
 	void		WriteRegister(uint16_t Reg, uint8_t Value);
 
 	void		RegisterKeyState(int Channel, int Note);
-	void		SetNamcoMixing(bool bLinear);			// // //
 
 	// Player
 	int			GetPlayerRow() const;
@@ -239,7 +277,7 @@ public:
 
 	int GetDefaultInstrument() const;
 
-	// 
+	//
 	// Private functions
 	//
 private:
@@ -252,8 +290,9 @@ private:
 	bool		ResetAudioDevice();
 	void		CloseAudioDevice();
 	void		CloseAudio();
-	template<class T, int SHIFT> void FillBuffer(int16_t const * pBuffer, uint32_t Size);
-	bool		PlayBuffer();
+	void FillBuffer(int16_t const * pBuffer, uint32_t Size);
+	bool		PlayBuffer(unsigned int bytesToWrite);
+	void GraphBuffer(gsl::span<const int16_t> data);
 
 	// Player
 	void		UpdateChannels();
@@ -271,7 +310,7 @@ private:
 
 	// Misc
 	void		PlaySample(const CDSample *pSample, int Offset, int Pitch);
-	
+
 	// Player
 	void		ReadPatternRow();
 	void		PlayerStepRow();
@@ -290,7 +329,18 @@ public:
 	//
 	// Private variables
 	//
+public:
+	/// Accessed by main thread only.
+	std::thread m_audioThread;
+
+	/// Accessed by audio thread only.
+	std::thread::id m_audioThreadID;
+
+	// Accessed by CCompiler for mixe chunk
+	std::vector<int16_t> SurveyMixLevels;
 private:
+	rigtorp::SPSCQueue<GuiMessage> m_MessageQueue;
+
 	// Objects
 	CChannelHandler		*m_pChannels[CHANNELS];
 	CTrackerChannel		*m_pTrackerChannels[CHANNELS];
@@ -298,42 +348,69 @@ private:
 	CFamiTrackerView	*m_pTrackerView;
 
 	// Sound
-	CDSound				*m_pDSound;
-	CDSoundChannel		*m_pDSoundChannel;
+	CSoundInterface				*m_pSoundInterface;
+	CSoundStream		*m_pSoundStream;
 	CVisualizerWnd		*m_pVisualizerWnd;
 	CAPU				*m_pAPU;
-	int currN163LevelOffset;
+
+	// Emulation objects
+	bool UseExtOPLL;
+	int OPLLDefaultPatchSet;
+	std::vector<uint8_t> OPLLHardwarePatchBytes;
+	std::vector<std::string> OPLLHardwarePatchNames;
+
+	// Mixer objects
+	bool UseSurveyMix;
+	std::vector<int16_t> DeviceMixOffset;
+
 
 	const CDSample		*m_pPreviewSample;
 
+	bool				m_CoInitialized;
 	bool				m_bRunning;
 
 	// Thread synchronization
 private:
-	mutable std::mutex m_csAPULock;		// // //
-	mutable CCriticalSection m_csVisualizerWndLock;
+	/// A fair mutex ensures that if the audio thread holds m_csAPULock,
+	/// and the UI thread is waiting for m_csAPULock,
+	/// the audio thread cannot release and reacquire m_csAPULock (starving the UI thread of access).
+	mutable FairMutex m_csAPULock;		// // //
+	mutable std::mutex m_csVisualizerWndLock;
 
 	// Handles
-	HANDLE				m_hInterruptEvent;					// Used to interrupt sound buffer syncing
+
+	/// Used to interrupt sound buffer syncing. Never null. To avoid data races, we never
+	/// overwrite this handle. Instead we assign once (in the constructor), then
+	/// SetEvent/ResetEvent afterwards.
+	///
+	/// It doesn't really matter, considering CSoundGen::BeginThread() is only ever
+	/// called once, but it's cleaner this way.
+	HandlePtr m_hInterruptEvent;
 
 // Sound variables (TODO: move sound to a new class?)
 private:
-	unsigned int		m_iSampleSize;						// Size of samples, in bits
+	// These are output (post-resampling) buffer sizes, for m_pResampleBuffer!
 	unsigned int		m_iBufSizeSamples;					// Buffer size in samples
 	unsigned int		m_iBufSizeBytes;					// Buffer size in bytes
-	unsigned int		m_iBufferPtr;						// This will point in samples
-	char				*m_pAccumBuffer;
-	short				*m_iGraphBuffer;
+
+	// unsigned int		m_iResampleOutPtr;					// This will point in samples
+	uint32_t m_inputBufferSize;
+	std::unique_ptr<float[]> m_pResampleInBuffer;
+	std::unique_ptr<float[]> m_pResampleOutBuffer;
+
 	int					m_iAudioUnderruns;					// Keep track of underruns to inform user
 	bool				m_bBufferTimeout;
 	bool				m_bBufferUnderrun;
 	bool				m_bAudioClipping;
 	int					m_iClipCounter;
-	
+
+	SRC_STATE * m_resampler = nullptr;
+	SRC_DATA m_resamplerArgs = {};
+
 // Tracker playing variables
 private:
 	unsigned int		m_iTempo;							// Tempo and speed
-	unsigned int		m_iSpeed;							
+	unsigned int		m_iSpeed;
 	int					m_iGrooveIndex;						// // // Current groove
 	unsigned int		m_iGroovePosition;					// // // Groove position
 	int					m_iTempoAccum;						// Used for speed calculation
@@ -416,15 +493,17 @@ private:
 	int					m_iSequencePlayPos;
 	int					m_iSequenceTimeout;
 
-	// Overloaded functions
-public:
-	virtual BOOL InitInstance();
-	virtual int	 ExitInstance();
-	virtual BOOL OnIdle(LONG lCount);
+	// Thread life cycle functions
+private:
+	bool InitInstance();
+	void ExitInstance();
+	void OnIdle();
 
 	// Implementation
+private:
+	bool DispatchGuiMessage(GuiMessage msg);
+
 public:
-	DECLARE_MESSAGE_MAP()
 	afx_msg void OnSilentAll(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnLoadSettings(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnStartPlayer(WPARAM wParam, LPARAM lParam);
@@ -439,11 +518,11 @@ public:
 	afx_msg void OnRemoveDocument(WPARAM wParam, LPARAM lParam);
 
 public:
-	std::unique_lock<std::mutex> Lock() {
-		return std::unique_lock<std::mutex>(m_csAPULock);
+	std::unique_lock<FairMutex> Lock() {
+		return std::unique_lock<FairMutex>(m_csAPULock);
 	}
 
-	std::unique_lock<std::mutex> DeferLock() {
-		return std::unique_lock<std::mutex>(m_csAPULock, std::defer_lock);
+	std::unique_lock<FairMutex> DeferLock() {
+		return std::unique_lock<FairMutex>(m_csAPULock, std::defer_lock);
 	}
 };
