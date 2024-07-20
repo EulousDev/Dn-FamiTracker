@@ -274,6 +274,24 @@ void CSoundGen::CreateChannels()
 	AssignChannel(new CTrackerChannel(_T("5B Square 1"), _T("5B1"), SNDCHIP_S5B, CHANID_S5B_CH1));
 	AssignChannel(new CTrackerChannel(_T("5B Square 2"), _T("5B2"), SNDCHIP_S5B, CHANID_S5B_CH2));
 	AssignChannel(new CTrackerChannel(_T("5B Square 3"), _T("5B3"), SNDCHIP_S5B, CHANID_S5B_CH3));
+
+	// // // EPSM
+	AssignChannel(new CTrackerChannel(_T("SSG 1"), _T("ES1"), SNDCHIP_EPSM, CHANID_EPSM_SSG1));
+	AssignChannel(new CTrackerChannel(_T("SSG 2"), _T("ES2"), SNDCHIP_EPSM, CHANID_EPSM_SSG2));
+	AssignChannel(new CTrackerChannel(_T("SSG 3"), _T("ES3"), SNDCHIP_EPSM, CHANID_EPSM_SSG3));
+	AssignChannel(new CTrackerChannel(_T("EPSM FM 1"), _T("EF1"), SNDCHIP_EPSM, CHANID_EPSM_FM1));
+	AssignChannel(new CTrackerChannel(_T("EPSM FM 2"), _T("EF2"), SNDCHIP_EPSM, CHANID_EPSM_FM2));
+	AssignChannel(new CTrackerChannel(_T("EPSM FM 3"), _T("EF3"), SNDCHIP_EPSM, CHANID_EPSM_FM3));
+	AssignChannel(new CTrackerChannel(_T("EPSM FM 4"), _T("EF4"), SNDCHIP_EPSM, CHANID_EPSM_FM4));
+	AssignChannel(new CTrackerChannel(_T("EPSM FM 5"), _T("EF5"), SNDCHIP_EPSM, CHANID_EPSM_FM5));
+	AssignChannel(new CTrackerChannel(_T("EPSM FM 6"), _T("EF6"), SNDCHIP_EPSM, CHANID_EPSM_FM6));
+	AssignChannel(new CTrackerChannel(_T("Kick"), _T("KIC"), SNDCHIP_EPSM, CHANID_EPSM_KICK));
+	AssignChannel(new CTrackerChannel(_T("Snare"), _T("SNA"), SNDCHIP_EPSM, CHANID_EPSM_SNARE));
+	AssignChannel(new CTrackerChannel(_T("Cymbal"), _T("CYM"), SNDCHIP_EPSM, CHANID_EPSM_CYMBAL));
+	AssignChannel(new CTrackerChannel(_T("Hi-hat"), _T("HAT"), SNDCHIP_EPSM, CHANID_EPSM_HIHAT));
+	AssignChannel(new CTrackerChannel(_T("Tom"), _T("TOM"), SNDCHIP_EPSM, CHANID_EPSM_TOM));
+	AssignChannel(new CTrackerChannel(_T("Rimshot"), _T("RIM"), SNDCHIP_EPSM, CHANID_EPSM_RIMSHOT));
+
 }
 
 void CSoundGen::AssignChannel(CTrackerChannel *pTrackerChannel)		// // //
@@ -570,6 +588,8 @@ void CSoundGen::DocumentPropertiesChanged(CFamiTrackerDoc *pDocument)
 			Table = m_iNoteLookupTableSaw; break;
 		case CHANID_VRC7_CH1: case CHANID_VRC7_CH2: case CHANID_VRC7_CH3:
 		case CHANID_VRC7_CH4: case CHANID_VRC7_CH5: case CHANID_VRC7_CH6:
+		case CHANID_EPSM_FM1: case CHANID_EPSM_FM2: case CHANID_EPSM_FM3:
+		case CHANID_EPSM_FM4: case CHANID_EPSM_FM5: case CHANID_EPSM_FM6:
 			Table = m_iNoteLookupTableVRC7; break;
 		case CHANID_FDS:
 			Table = m_iNoteLookupTableFDS; break;
@@ -577,6 +597,7 @@ void CSoundGen::DocumentPropertiesChanged(CFamiTrackerDoc *pDocument)
 		case CHANID_N163_CH5: case CHANID_N163_CH6: case CHANID_N163_CH7: case CHANID_N163_CH8:
 			Table = m_iNoteLookupTableN163; break;
 		case CHANID_S5B_CH1: case CHANID_S5B_CH2: case CHANID_S5B_CH3:
+		case CHANID_EPSM_SSG1: case CHANID_EPSM_SSG2: case CHANID_EPSM_SSG3:
 			Table = m_iNoteLookupTableS5B; break;
 		default: continue;
 		}
@@ -593,7 +614,7 @@ void CSoundGen::DocumentPropertiesChanged(CFamiTrackerDoc *pDocument)
 	}
 
 	m_iSpeedSplitPoint = pDocument->GetSpeedSplitPoint();
-
+	
 	CSettings* pSettings = theApp.GetSettings();
 
 	// Set survey mix level object. Will be used by CCompiler for mixe chunk.

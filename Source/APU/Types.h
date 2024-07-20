@@ -33,6 +33,7 @@ const uint8_t SNDCHIP_FDS  = 4;			// Famicom Disk Sound
 const uint8_t SNDCHIP_MMC5 = 8;			// Nintendo MMC5
 const uint8_t SNDCHIP_N163 = 16;		// Namco N-106
 const uint8_t SNDCHIP_S5B  = 32;		// Sunsoft 5B
+const uint8_t SNDCHIP_EPSM = 64;		// EPSM
 
 enum chan_id_t {
 	CHANID_SQUARE1,
@@ -70,6 +71,22 @@ enum chan_id_t {
 	CHANID_S5B_CH1,
 	CHANID_S5B_CH2,
 	CHANID_S5B_CH3,
+
+	CHANID_EPSM_SSG1,
+	CHANID_EPSM_SSG2,
+	CHANID_EPSM_SSG3,
+	CHANID_EPSM_FM1,
+	CHANID_EPSM_FM2,
+	CHANID_EPSM_FM3,
+	CHANID_EPSM_FM4,
+	CHANID_EPSM_FM5,
+	CHANID_EPSM_FM6,
+	CHANID_EPSM_KICK,
+	CHANID_EPSM_SNARE,
+	CHANID_EPSM_CYMBAL,
+	CHANID_EPSM_HIHAT,
+	CHANID_EPSM_TOM,
+	CHANID_EPSM_RIMSHOT,
 
 	CHANNELS		/* Total number of channels */
 };

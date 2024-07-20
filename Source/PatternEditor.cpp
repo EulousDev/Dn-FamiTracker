@@ -1347,6 +1347,11 @@ void CPatternEditor::DrawCell(CDC *pDC, int PosX, cursor_column_t Column, int Ch
 	static const char NOTES_C[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 	// Hex numbers
 	static const char HEX[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+	
+	// Sample numbers
+	static const char SAMPLE_NUMBERS_1[] = {'K', 'S', 'C', 'H', 'T', 'R'};
+	static const char SAMPLE_NUMBERS_2[] = {'I', 'N', 'Y', 'A', 'O', 'I'};
+	static const char SAMPLE_NUMBERS_3[] = {'C', 'A', 'M', 'T', 'M', 'M'};
 
 	const bool m_bDisplayFlat = theApp.GetSettings()->Appearance.bDisplayFlats;		// // //
 
@@ -1354,6 +1359,7 @@ void CPatternEditor::DrawCell(CDC *pDC, int PosX, cursor_column_t Column, int Ch
 	const char *NOTES_B = m_bDisplayFlat ? NOTES_B_FLAT : NOTES_B_SHARP;
 
 	const CTrackerChannel *pTrackerChannel = m_pDocument->GetChannel(Channel);
+	const bool isEPSMSample = (pTrackerChannel->GetID() >= CHANID_EPSM_KICK && pTrackerChannel->GetID() <= CHANID_EPSM_RIMSHOT);
 
 	effect_t EffNumber = Column >= 4 ? pNoteData->EffNumber[(Column - 4) / 3] : EF_NONE;		// // //
 	int EffParam  = Column >= 4 ? pNoteData->EffParam[(Column - 4) / 3] : 0;
@@ -1378,7 +1384,7 @@ void CPatternEditor::DrawCell(CDC *pDC, int PosX, cursor_column_t Column, int Ch
 	COLORREF DimEff = pColorInfo->Compact;		// // //
 
 	// Make non-available instruments red in the pattern editor
-	if (pNoteData->Instrument < MAX_INSTRUMENTS && 
+	if (!isEPSMSample && pNoteData->Instrument < MAX_INSTRUMENTS && 
 		(!m_pDocument->IsInstrumentUsed(pNoteData->Instrument) ||
 		!pTrackerChannel->IsInstrumentCompatible(pNoteData->Instrument, m_pDocument->GetInstrumentType(pNoteData->Instrument)))) { // // //
 		DimInst = InstColor = RGB(255, 0, 0);
@@ -1476,8 +1482,16 @@ void CPatternEditor::DrawCell(CDC *pDC, int PosX, cursor_column_t Column, int Ch
 						DrawChar(pDC, PosX + m_iCharWidth / 2, PosY, HEX[NoiseFreq], pColorInfo->Note);		// // //
 						DrawChar(pDC, PosX + m_iCharWidth * 3 / 2, PosY, '-', pColorInfo->Note);
 						DrawChar(pDC, PosX + m_iCharWidth * 5 / 2, PosY, '#', pColorInfo->Note);
-					}
-					else {
+					} else if (isEPSMSample) {
+						// Sample
+						int sampleID = pTrackerChannel->GetID() - CHANID_EPSM_KICK;
+						DrawChar(pDC, PosX + m_iCharWidth / 2, PosY, SAMPLE_NUMBERS_1[sampleID], pColorInfo->Note);		// // //
+						//DrawChar(pDC, PosX + m_iCharWidth * 3 / 2, PosY, SAMPLE_NUMBERS_2[sampleID], pColorInfo->Note);		// // //
+						//DrawChar(pDC, PosX + m_iCharWidth * 5 / 2, PosY, SAMPLE_NUMBERS_3[sampleID], pColorInfo->Note);		// // //
+						//DrawChar(pDC, PosX + m_iCharWidth / 2, PosY, '#', pColorInfo->Note);
+						DrawChar(pDC, PosX + m_iCharWidth * 3 / 2, PosY, '-', pColorInfo->Note);
+						DrawChar(pDC, PosX + m_iCharWidth * 5 / 2, PosY, '#', pColorInfo->Note);
+					} else {
 						// The rest
 
 						// // // Check valid note
@@ -1511,6 +1525,8 @@ void CPatternEditor::DrawCell(CDC *pDC, int PosX, cursor_column_t Column, int Ch
 				BAR(PosX);
 			else if (pNoteData->Instrument == HOLD_INSTRUMENT)		// // // 050B
 				DrawChar(pDC, PosX + m_iCharWidth / 2, PosY, '&', InstColor);
+			else if (isEPSMSample)		// // // 050B
+				DrawChar(pDC, PosX + m_iCharWidth / 2, PosY, '-', InstColor);
 			else
 				DrawChar(pDC, PosX + m_iCharWidth / 2, PosY, HEX[pNoteData->Instrument >> 4], InstColor);		// // //
 			break;
@@ -1520,10 +1536,12 @@ void CPatternEditor::DrawCell(CDC *pDC, int PosX, cursor_column_t Column, int Ch
 				BAR(PosX);
 			else if (pNoteData->Instrument == HOLD_INSTRUMENT)		// // // 050B
 				DrawChar(pDC, PosX + m_iCharWidth / 2, PosY, '&', InstColor);
+			else if (isEPSMSample)		// // // 050B
+				DrawChar(pDC, PosX + m_iCharWidth / 2, PosY, '-', InstColor);
 			else
 				DrawChar(pDC, PosX + m_iCharWidth / 2, PosY, HEX[pNoteData->Instrument & 0x0F], InstColor);		// // //
 			break;
-		case C_VOLUME: 
+		case C_VOLUME:
 			// Volume
 			if (pNoteData->Vol == MAX_VOLUME || pTrackerChannel->GetID() == CHANID_DPCM)
 				BAR(PosX);
@@ -2206,7 +2224,6 @@ void CPatternEditor::DrawRegisters(CDC *pDC)
 			}
 			switch (i) {
 			case 8: DrawTextFunc(180, FDStext); break;
-			case 9: DrawTextFunc(180, Modtext); break;
 			}
 		}
 		DrawVolFDSMod(freq, vol << 3, outfreq, moddepth << 3, outfreq);

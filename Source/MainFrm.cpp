@@ -1215,7 +1215,12 @@ void CMainFrame::OnAddInstrument()
 
 	// Chip type depends on selected channel
 	CFamiTrackerView *pView = static_cast<CFamiTrackerView*>(GetActiveView());
+	CFamiTrackerDoc* pDoc = static_cast<CFamiTrackerDoc*>(GetActiveDocument());
 	int ChipType = pView->GetSelectedChipType();
+
+	if (ChipType == SNDCHIP_EPSM && pDoc->GetChannel(pView->GetSelectedChannel())->GetID() <= CHANID_EPSM_SSG3)
+		ChipType = SNDCHIP_S5B;
+
 	NewInstrument(ChipType);
 }
 
@@ -1673,9 +1678,12 @@ void CMainFrame::OnUpdateSBChip(CCmdUI *pCmdUI)
 			case SNDCHIP_S5B:
 				String = _T(" Sunsoft 5B");
 				break;
+			case SNDCHIP_EPSM:
+				String = _T(" EPSM");
+				break;
 		}
 	else {
-		for (int i = 0; i < 6; i++)	if (Chip & (1 << i)) switch (i) {
+		for (int i = 0; i < 7; i++)	if (Chip & (1 << i)) switch (i) {
 			case 0:
 				String += _T(" + VRC6");
 				break;
@@ -1693,6 +1701,9 @@ void CMainFrame::OnUpdateSBChip(CCmdUI *pCmdUI)
 				break;
 			case 5:
 				String += _T(" + S5B");
+				break;
+			case 6:
+				String += _T(" + EPSM");
 				break;
 		}
 		String.Delete(0, 3);
@@ -2689,7 +2700,7 @@ void CMainFrame::OnNewInstrumentMenu(NMHDR* pNotifyStruct, LRESULT* result)
 
 	if (Chip & SNDCHIP_VRC6)
 		menu.AppendMenu(MF_STRING, ID_INSTRUMENT_ADD_VRC6, _T("New VRC6 instrument"));
-	if (Chip & SNDCHIP_VRC7)
+	if (Chip & SNDCHIP_VRC7 || Chip & SNDCHIP_EPSM)
 		menu.AppendMenu(MF_STRING, ID_INSTRUMENT_ADD_VRC7, _T("New VRC7 instrument"));
 	if (Chip & SNDCHIP_FDS)
 		menu.AppendMenu(MF_STRING, ID_INSTRUMENT_ADD_FDS, _T("New FDS instrument"));
@@ -2697,7 +2708,7 @@ void CMainFrame::OnNewInstrumentMenu(NMHDR* pNotifyStruct, LRESULT* result)
 		menu.AppendMenu(MF_STRING, ID_INSTRUMENT_ADD_MMC5, _T("New MMC5 instrument"));
 	if (Chip & SNDCHIP_N163)
 		menu.AppendMenu(MF_STRING, ID_INSTRUMENT_ADD_N163, _T("New Namco instrument"));
-	if (Chip & SNDCHIP_S5B)
+	if (Chip & SNDCHIP_S5B || Chip & SNDCHIP_EPSM)
 		menu.AppendMenu(MF_STRING, ID_INSTRUMENT_ADD_S5B, _T("New Sunsoft instrument"));
 
 	switch (SelectedChip) {

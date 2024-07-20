@@ -35,13 +35,14 @@
 // Used to handle channels in a future version. Not finished.
 
 const TCHAR *ROOT_ITEMS[] = {
-	_T("2A03/2A07"), 
-	_T("Konami VRC6"), 
-	_T("Konami VRC7"), 
-	_T("Nintendo FDS"), 
-	_T("Nintendo MMC5"), 
-	_T("Namco 106"), 
-	_T("Sunsoft 5B")
+	_T("2A03/2A07"),
+	_T("Konami VRC6"),
+	_T("Konami VRC7"),
+	_T("Nintendo FDS"),
+	_T("Nintendo MMC5"),
+	_T("Namco 106"),
+	_T("Sunsoft 5B"),
+	_T("Konami VRC7")
 };
 
 const int CHILD_ITEMS_ID[ROOT_ITEM_COUNT][9] = {

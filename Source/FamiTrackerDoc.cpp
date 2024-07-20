@@ -4420,6 +4420,10 @@ int CFamiTrackerDoc::GetChannelPosition(int Channel, unsigned char Chip)		// // 
 	unsigned int pos = Channel;
 	if (pos == CHANID_MMC5_VOICE) return -1;
 
+	if (!(Chip & SNDCHIP_EPSM)) {
+		if (pos > CHANID_EPSM_RIMSHOT) pos -= 15;
+		else if (pos >= CHANID_EPSM_SSG1) return -1;
+	}
 	if (!(Chip & SNDCHIP_S5B)) {
 		if (pos > CHANID_S5B_CH3) pos -= 3;
 		else if (pos >= CHANID_S5B_CH1) return -1;

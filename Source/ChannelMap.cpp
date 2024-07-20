@@ -55,6 +55,7 @@ void CChannelMap::SetupSoundChips()
 	AddChip(SNDCHIP_MMC5, INST_2A03, _T("Nintendo MMC5"));
 	AddChip(SNDCHIP_N163, INST_N163, _T("Namco 163"));
 	AddChip(SNDCHIP_S5B,  INST_S5B,  _T("Sunsoft 5B"));
+	AddChip(SNDCHIP_EPSM, INST_VRC7, _T("EPSM"));
 }
 
 void CChannelMap::AddChip(int Ident, inst_type_t Inst, LPCTSTR pName)

@@ -142,6 +142,7 @@ namespace {
 			case SNDCHIP_MMC5: return "MMC5"sv;
 			case SNDCHIP_N163: return "N163"sv;
 			case SNDCHIP_S5B:  return "S5B"sv;
+			case SNDCHIP_EPSM: return "EPSM"sv;
 			default: return ""sv;
 		}
 	}
@@ -399,6 +400,7 @@ void to_json(json& j, const CFamiTrackerDoc& modfile) {
 			case SNDCHIP_FDS: subindex -= CHANID_FDS; break;
 			case SNDCHIP_VRC7: subindex -= CHANID_VRC7_CH1; break;
 			case SNDCHIP_S5B: subindex -= CHANID_S5B_CH1; break;
+			case SNDCHIP_EPSM: subindex -= CHANID_EPSM_SSG1; break;
 			default: break;
 		}
 	};
@@ -538,7 +540,7 @@ void to_json(json& j, const CFamiTrackerDoc& modfile) {
 			{ "OPLL_patch_data", opll_patch_data },
 		});
 	}
-
+	
 	for (unsigned i = 0; i < MAX_INSTRUMENTS; ++i)
 		if (auto pInst = modfile.GetInstrumentManager()->GetInstrument(i)) {
 			auto ij = json(*pInst);

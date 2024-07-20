@@ -747,6 +747,12 @@
     <ClCompile Include="Source\ConfigEmulation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\JsonExporter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ChannelsEPSM.cpp">
+      <Filter>Source Files\Sound Driver\Channels</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Exception.h">
@@ -1495,6 +1501,12 @@
     </ClInclude>
     <ClInclude Include="Source\rigtorp\SPSCQueue.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\JsonExporter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ChannelsEPSM.h">
+      <Filter>Header Files\Sound Driver Headers\Channels Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
