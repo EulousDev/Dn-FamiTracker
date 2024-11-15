@@ -881,6 +881,7 @@
 #define ID_CONTROLPANEL_LEFT            33212
 #define ID_CONTROLPANEL_RIGHT           33213
 #define ID_CONTROLPANEL_POPUP           33214
+#define ID_Menu                         33215
 #define ID_INSTRUMENT_ADD_2A03          36864
 #define ID_INSTRUMENT_ADD_FDS           36865
 #define ID_INSTRUMENT_ADD_MMC5          36866
@@ -904,7 +905,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        380
-#define _APS_NEXT_COMMAND_VALUE         33215
+#define _APS_NEXT_COMMAND_VALUE         33216
 #define _APS_NEXT_CONTROL_VALUE         1537
 #define _APS_NEXT_SYMED_VALUE           179
 #endif
