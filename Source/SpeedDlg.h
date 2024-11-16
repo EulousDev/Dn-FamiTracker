@@ -44,6 +44,7 @@ protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 
 	int m_iSpeed;
+	bool m_bInitialized = false; // for some reason OnEnChangeSpeedEdit wants to run before the initialization
 
 	DECLARE_MESSAGE_MAP()
 public:
@@ -52,4 +53,7 @@ public:
 //	virtual BOOL Create(LPCTSTR lpszTemplateName, CWnd* pParentWnd = NULL);
 	virtual BOOL OnInitDialog();
 	afx_msg void OnBnClickedCancel();
+	afx_msg void OnNMCustomdrawSpeedSld(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnEnChangeSpeedEdit();
+	afx_msg void OnDeltaposSpeedSpin(NMHDR* pNMHDR, LRESULT* pResult);
 };

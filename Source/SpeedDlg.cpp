@@ -50,6 +50,9 @@ void CSpeedDlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CSpeedDlg, CDialog)
 	ON_WM_HSCROLL()
 	ON_BN_CLICKED(IDCANCEL, OnBnClickedCancel)
+	ON_NOTIFY(NM_CUSTOMDRAW, IDC_SPEED_SLD, &CSpeedDlg::OnNMCustomdrawSpeedSld)
+	ON_EN_CHANGE(IDC_SPEED_EDIT, &CSpeedDlg::OnEnChangeSpeedEdit)
+	ON_NOTIFY(UDN_DELTAPOS, IDC_SPEED_SPIN, &CSpeedDlg::OnDeltaposSpeedSpin)
 END_MESSAGE_MAP()
 
 
@@ -67,9 +70,13 @@ void CSpeedDlg::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 {
 	CDialog::OnHScroll(nSBCode, nPos, pScrollBar);
 	m_iSpeed = ((CSliderCtrl*)pScrollBar)->GetPos();
-	CString String;
-	String.Format(_T("%i Hz"), m_iSpeed );
-	SetDlgItemText(IDC_SPEED, String);
+
+	CSpinButtonCtrl* Spin = static_cast<CSpinButtonCtrl*>(GetDlgItem(IDC_SPEED_SPIN));
+	Spin->SetPos(m_iSpeed);
+
+	CString str;
+	str.Format(_T("%i"), m_iSpeed);
+	SetDlgItemText(IDC_SPEED_EDIT, str);
 }
 
 BOOL CSpeedDlg::OnInitDialog()
@@ -77,14 +84,21 @@ BOOL CSpeedDlg::OnInitDialog()
 	CDialog::OnInitDialog();
 
 	CSliderCtrl *Slider = static_cast<CSliderCtrl*>(GetDlgItem(IDC_SPEED_SLD));
-	CString String;
+	CEditView* Edit = static_cast<CEditView*>(GetDlgItem(IDC_SPEED_EDIT));
+	CSpinButtonCtrl* Spin = static_cast<CSpinButtonCtrl*>(GetDlgItem(IDC_SPEED_SPIN));
 
 	// Playing at FPS < 0.5*RATE_MIN will overflow blip_buffer.
 	Slider->SetRange(RATE_MIN, RATE_MAX);
-	Slider->SetPos(m_iSpeed);
+	Spin->SetRange(RATE_MIN, RATE_MAX);
 
-	String.Format(_T("%i Hz"), m_iSpeed);
-	SetDlgItemText(IDC_SPEED, String);
+	Slider->SetPos(m_iSpeed);
+	Spin->SetPos(m_iSpeed);
+
+	CString str;
+	str.Format(_T("%i"), m_iSpeed);
+	SetDlgItemText(IDC_SPEED_EDIT, str);
+
+	m_bInitialized = true;
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// EXCEPTION: OCX Property Pages should return FALSE
@@ -94,4 +108,41 @@ void CSpeedDlg::OnBnClickedCancel()
 {
 	m_iSpeed = 0;
 	OnCancel();
+}
+
+
+void CSpeedDlg::OnNMCustomdrawSpeedSld(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	LPNMCUSTOMDRAW pNMCD = reinterpret_cast<LPNMCUSTOMDRAW>(pNMHDR);
+	// TODO: Add your control notification handler code here
+	*pResult = 0;
+}
+
+void CSpeedDlg::OnEnChangeSpeedEdit()
+{
+	if (m_bInitialized) {
+		CString str;
+		GetDlgItemText(IDC_SPEED_EDIT, str);
+		int pos = _ttoi(str);
+
+		if (pos < RATE_MIN) pos = RATE_MIN;
+		if (pos > RATE_MAX) pos = RATE_MAX;
+
+		CSliderCtrl* Slider = static_cast<CSliderCtrl*>(GetDlgItem(IDC_SPEED_SLD));
+		Slider->SetPos(pos);
+
+		m_iSpeed = pos;
+	}
+}
+
+void CSpeedDlg::OnDeltaposSpeedSpin(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	CString str;
+	GetDlgItemText(IDC_SPEED_SPIN, str);
+
+	int speed = _ttoi(str);
+	int newspeed = speed - ((NMUPDOWN*)pNMHDR)->iDelta;
+
+	str.Format(_T("%i"), newspeed);
+	SetDlgItemText(IDC_SPEED_SPIN, str);
 }
